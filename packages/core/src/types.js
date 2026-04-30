@@ -1,0 +1,116 @@
+/**
+ * @sol-login/core — Types
+ * Framework-agnostic type definitions for the .sol Login SDK.
+ */
+
+/**
+ * @typedef {Object} SolIdentity
+ * @property {string} wallet - Base58 public key
+ * @property {string|null} domain - ".sol" domain name
+ * @property {string|null} avatar - IPFS/Arweave/HTTP URL
+ * @property {string|null} displayName
+ * @property {string|null} bio
+ * @property {SolSocials} socials
+ * @property {ReputationScore|null} reputation
+ * @property {ZkCredential[]} credentials
+ * @property {number} resolvedAt - Unix timestamp
+ */
+
+/**
+ * @typedef {Object} SolSocials
+ * @property {string} [twitter]
+ * @property {string} [github]
+ * @property {string} [discord]
+ * @property {string} [farcaster]
+ */
+
+/**
+ * @typedef {Object} ReputationScore
+ * @property {number} total - 0–1000
+ * @property {ReputationBreakdown} breakdown
+ */
+
+/**
+ * @typedef {Object} ReputationBreakdown
+ * @property {number} defi - 0–1 normalized
+ * @property {number} governance
+ * @property {number} nft
+ * @property {number} domainAge
+ * @property {number} socialVerification
+ */
+
+/**
+ * @typedef {Object} ZkCredential
+ * @property {'reputation_threshold'|'wallet_age'|'sybil_nullifier'|'social_ownership'} type
+ * @property {number} [threshold]
+ * @property {number} verifiedAt - Unix timestamp
+ * @property {string} txSignature - Solana tx signature
+ * @property {number|null} expiresAt
+ */
+
+/**
+ * @typedef {Object} ChallengeResponse
+ * @property {string} nonce
+ * @property {string} message
+ */
+
+/**
+ * @typedef {Object} VerifyResponse
+ * @property {string} token - JWT session token
+ * @property {SolIdentity} identity
+ */
+
+/**
+ * @typedef {Object} ProofRequest
+ * @property {'reputation_threshold'|'wallet_age'|'sybil_nullifier'|'social_ownership'} type
+ * @property {number} [threshold]
+ */
+
+/**
+ * @typedef {Object} ProofResult
+ * @property {boolean} verified
+ * @property {string} txSignature
+ * @property {ZkCredential} credential
+ */
+
+export const REPUTATION_WEIGHTS = {
+  defi: 0.30,
+  governance: 0.25,
+  nft: 0.15,
+  domainAge: 0.20,
+  socialVerification: 0.10,
+};
+
+export const CREDENTIAL_LABELS = {
+  wallet_age: { label: "Wallet Age", icon: "Clock" },
+  reputation_threshold: { label: "Reputation", icon: "TrendingUp" },
+  sybil_nullifier: { label: "Unique Human", icon: "Fingerprint" },
+  social_ownership: { label: "Social Verified", icon: "ShieldCheck" },
+};
+
+export const WALLETS = [
+  { id: "phantom", name: "Phantom", color: "#AB9FF2", initial: "P" },
+  { id: "backpack", name: "Backpack", color: "#E33E3F", initial: "B" },
+  { id: "solflare", name: "Solflare", color: "#FC9965", initial: "S" },
+  { id: "glow", name: "Glow", color: "#7B61FF", initial: "G" },
+];
+
+export const FEATURES = [
+  { title: "One-Tap Auth", desc: "Wallet signature + .sol resolution in a single drop-in component. Replace 200 lines of wallet boilerplate.", accent: "purple", code: `<SolLoginButton onSuccess={onLogin} />` },
+  { title: "Identity Resolution", desc: "Resolve .sol → wallet → linked socials, avatar, bio, and reputation in one composable object.", accent: "teal", code: `const { identity } = useSolLogin()\nidentity.domain      // "dijo.sol"\nidentity.socials     // { twitter, github, ... }` },
+  { title: "ZK Credentials", desc: "Prove reputation > N, wallet age > N, or unique humanness without revealing the underlying data.", accent: "purple", code: `await requestProof({\n  type: 'reputation_threshold',\n  threshold: 500,\n})` },
+  { title: "Reputation Engine", desc: "Aggregate Jupiter, Marinade, Drift, Tensor, Realms activity into a 0–1000 score backed by Groth16.", accent: "teal", code: `useReputation(wallet)\n// → { total: 847, breakdown: {...} }` },
+  { title: "Sybil Resistance", desc: "Per-app nullifiers ensure one .sol = one human. Stop multi-account farming without doxxing users.", accent: "accent", code: `// nullifier = Poseidon(.sol, secret, appId)` },
+  { title: "Drop-in Express", desc: "Server-side session middleware. Verify .sol identity on protected routes with one line of code.", accent: "purple", code: `app.get('/protected',\n  verifySolSession(JWT_SECRET),\n  handler)` },
+];
+
+export const INTEGRATIONS = [
+  { name: "Jupiter", desc: "Swap activity" },
+  { name: "Marinade", desc: "Liquid staking" },
+  { name: "Drift", desc: "Perp positions" },
+  { name: "Tensor", desc: "NFT volume" },
+  { name: "Magic Eden", desc: "NFT trades" },
+  { name: "Realms", desc: "DAO votes" },
+  { name: "SNS", desc: "Identity layer" },
+  { name: "Farcaster", desc: "Social graph" },
+];
