@@ -3,21 +3,12 @@ import { SolLoginClient, storeToken, getStoredToken, clearToken, isTokenExpired 
 
 const SolLoginContext = createContext(null);
 
-/**
- * @sol-login/react — SolLoginProvider
- * Wraps the app and provides identity state, auth methods, and ZK proof lifecycle.
- *
- * @param {Object} props
- * @param {SolLoginClient} props.client - Instance of SolLoginClient
- * @param {React.ReactNode} props.children
- */
 export const SolLoginProvider = ({ client, children }) => {
   const [identity, setIdentity] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [walletPickerOpen, setWalletPickerOpen] = useState(false);
   const [zkProofRequest, setZkProofRequest] = useState(null);
 
-  // Restore session on mount
   useEffect(() => {
     const token = getStoredToken();
     if (token && !isTokenExpired(token)) {
@@ -32,14 +23,11 @@ export const SolLoginProvider = ({ client, children }) => {
   const login = useCallback(async (walletAddress, signMessage) => {
     setIsConnecting(true);
     try {
-      // 1. Get challenge from backend
       const { nonce, message } = await client.getChallenge(walletAddress);
 
-      // 2. Sign challenge with wallet
       const messageBytes = new TextEncoder().encode(message);
       const signature = await signMessage(messageBytes);
 
-      // 3. Encode signature as base58
       const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
       const sigBase58 = ((bytes) => {
         const digits = [0];
@@ -54,10 +42,8 @@ export const SolLoginProvider = ({ client, children }) => {
         return str;
       })(signature);
 
-      // 4. Verify with backend → get JWT + identity
       const { token, identity: resolved } = await client.verify(walletAddress, sigBase58);
 
-      // 5. Store session
       storeToken(token);
       setIdentity(resolved);
       setWalletPickerOpen(false);
@@ -90,10 +76,7 @@ export const SolLoginProvider = ({ client, children }) => {
       });
       setIdentity(prev => {
         if (!prev) return prev;
-        return {
-          ...prev,
-          credentials: [...prev.credentials, result.credential],
-        };
+        return { ...prev, credentials: [...prev.credentials, result.credential] };
       });
       return result;
     } catch (err) {

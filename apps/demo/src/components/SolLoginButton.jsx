@@ -11,7 +11,7 @@ const SolLoginButton = ({
   size = "md", full = false, redirectOnLogin = false, label = "Sign in with .sol"
 }) => {
   const { identity, login, isConnecting } = useSolLogin();
-  const { publicKey, signMessage, connected, wallet } = useWallet();
+  const { publicKey, signMessage, connected } = useWallet();
   const { setVisible } = useWalletModal();
   const navigate = useNavigate();
 
@@ -46,12 +46,10 @@ const SolLoginButton = ({
       handleLoginFlow();
     } else {
       setIsLoginIntended(true);
-      // Open the Solana wallet adapter modal to connect
       setVisible(true);
     }
   };
 
-  // When wallet connects for the first time after clicking, trigger the SDK login flow
   useEffect(() => {
     if (connected && publicKey && signMessage && !identity && !isConnecting && !hasAttemptedLogin && isLoginIntended) {
       setHasAttemptedLogin(true);
@@ -59,7 +57,6 @@ const SolLoginButton = ({
     }
   }, [connected, publicKey, signMessage, identity, isConnecting, hasAttemptedLogin, isLoginIntended, handleLoginFlow]);
 
-  // Reset attempt flag when wallet disconnects
   useEffect(() => {
     if (!connected) {
       setHasAttemptedLogin(false);

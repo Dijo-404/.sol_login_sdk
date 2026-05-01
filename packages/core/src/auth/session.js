@@ -1,8 +1,3 @@
-/**
- * @sol-login/core — Session management
- * Client-side JWT token storage and lifecycle.
- */
-
 const STORAGE_KEY = "sol_login_token";
 
 export function getStoredToken() {
@@ -12,19 +7,14 @@ export function getStoredToken() {
 
 export function storeToken(token) {
   try { localStorage.setItem(STORAGE_KEY, token); }
-  catch { /* SSR or no localStorage */ }
+  catch {}
 }
 
 export function clearToken() {
   try { localStorage.removeItem(STORAGE_KEY); }
-  catch { /* SSR or no localStorage */ }
+  catch {}
 }
 
-/**
- * Decode a JWT payload without verification (client-side only).
- * @param {string} token
- * @returns {Object|null}
- */
 export function decodeTokenPayload(token) {
   try {
     const base64 = token.split(".")[1];

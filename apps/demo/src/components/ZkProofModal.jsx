@@ -40,7 +40,6 @@ const ZkProofModal = () => {
         setLogs((prev) => [...prev, `  ✓ ${STEPS[i].label} — ok`]);
       }
 
-      // Actually call the backend to verify and store the credential
       try {
         const result = await completeProof({ type: zkProofRequest.type, threshold: zkProofRequest.threshold });
         const sig = result?.txSignature || `${Math.random().toString(36).slice(2, 6).toUpperCase()}…${Math.random().toString(36).slice(2, 5)}`;
@@ -81,7 +80,6 @@ const ZkProofModal = () => {
             {zkProofRequest.type === "social_ownership" && (<>ownership of a linked social account without revealing the handle.</>)}
           </p>
 
-          {/* Terminal */}
           <div className="mt-5 rounded-xl bg-black/60 border border-white/5 overflow-hidden">
             <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/5">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
@@ -104,7 +102,6 @@ const ZkProofModal = () => {
             </div>
           </div>
 
-          {/* Steps */}
           <div className="mt-5 grid grid-cols-4 gap-2">
             {STEPS.map((s, i) => {
               const Icon = s.icon;

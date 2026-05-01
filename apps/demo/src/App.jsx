@@ -22,25 +22,13 @@ const SOLANA_NETWORK = import.meta.env.VITE_SOLANA_NETWORK || "devnet";
 const RPC_ENDPOINT = import.meta.env.VITE_SOLANA_RPC || "https://api.devnet.solana.com";
 
 function App() {
-  // Register MetaMask Snap for Solana via Solflare's wallet-standard adapter.
-  // This runs once and adds MetaMask as a selectable Solana wallet.
   useEffect(() => {
     import("@solflare-wallet/metamask-wallet-standard").then((mod) => {
-      if (typeof mod.registerWallet === "function") {
-        mod.registerWallet();
-      } else if (typeof mod.default === "function") {
-        mod.default();
-      }
-    }).catch(() => {
-      // MetaMask Snap registration is best-effort — no-op on failure
-    });
+      if (typeof mod.registerWallet === "function") mod.registerWallet();
+      else if (typeof mod.default === "function") mod.default();
+    }).catch(() => {});
   }, []);
 
-  // Empty array = rely on Wallet Standard auto-detection.
-  // Modern wallets (Phantom, Solflare, Backpack, MetaMask Snap) register
-  // themselves via the Wallet Standard and are detected automatically.
-  // Passing legacy adapters (e.g. PhantomWalletAdapter) causes duplicates
-  // and can break connection flow.
   const wallets = useMemo(() => [], []);
 
   const solLoginClient = useMemo(() => new SolLoginClient({

@@ -17,7 +17,6 @@ const WALLET_COLORS = {
 const WalletPicker = ({ open, onClose, onSelect, isConnecting }) => {
   const { wallets } = useWallet();
 
-  // Filter to only "installed" or "loadable" wallets
   const detected = wallets.filter(
     (w) => w.readyState === "Installed" || w.readyState === "Loadable"
   );

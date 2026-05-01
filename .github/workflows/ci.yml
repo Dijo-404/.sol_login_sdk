@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-build:
+    name: Lint and Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Build demo app
+        run: pnpm --filter demo build
+
+  backend:
+    name: Backend Health Check
+    runs-on: ubuntu-latest
+    needs: lint-and-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start backend and verify health
+        env:
+          PORT: 4000
+          SOLANA_RPC_URL: https://api.devnet.solana.com
+          SOLANA_NETWORK: devnet
+          JWT_SECRET: ci-test-secret
+          JWT_EXPIRY: 1h
+        run: |
+          cd apps/backend
+          node src/index.js &
+          SERVER_PID=$!
+          sleep 3
+          STATUS=$(curl -sf http://localhost:4000/health | jq -r '.status')
+          kill $SERVER_PID
+          if [ "$STATUS" != "ok" ]; then
+            echo "Health check failed"
+            exit 1
+          fi
+          echo "Backend health check passed"

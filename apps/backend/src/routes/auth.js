@@ -6,7 +6,6 @@ import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
 
-// POST /auth/challenge — Issue nonce + message for wallet to sign
 router.post("/challenge", (req, res) => {
   try {
     const { walletAddress } = req.body;
@@ -18,7 +17,6 @@ router.post("/challenge", (req, res) => {
   }
 });
 
-// POST /auth/verify — Verify signature, resolve identity, issue JWT
 router.post("/verify", async (req, res) => {
   try {
     const { walletAddress, signature, solDomain } = req.body;
@@ -26,34 +24,25 @@ router.post("/verify", async (req, res) => {
       return res.status(400).json({ error: "walletAddress and signature required" });
     }
 
-    // Verify Ed25519 signature
     const session = verifySignature(walletAddress, signature, solDomain);
 
-    // Resolve identity from SNS
     let identity = null;
     if (solDomain) {
       identity = await resolveIdentity(solDomain);
     }
 
-    // Build identity object with fallback
     if (!identity) {
       identity = {
-        wallet: walletAddress,
-        domain: solDomain || null,
-        avatar: null,
-        displayName: null,
-        bio: null,
-        socials: {},
-        reputation: null,
-        credentials: [],
+        wallet: walletAddress, domain: solDomain || null,
+        avatar: null, displayName: null, bio: null, socials: {},
+        reputation: null, credentials: [],
         resolvedAt: Math.floor(Date.now() / 1000),
       };
     }
 
-    // Fetch reputation
     try {
       identity.reputation = await computeReputation(walletAddress);
-    } catch { /* reputation is optional */ }
+    } catch {}
 
     res.json({ token: session.token, identity });
   } catch (err) {
@@ -61,7 +50,6 @@ router.post("/verify", async (req, res) => {
   }
 });
 
-// GET /auth/me — Return current session identity
 router.get("/me", authenticate, async (req, res) => {
   try {
     const { wallet, domain } = req.user;
@@ -70,18 +58,21 @@ router.get("/me", authenticate, async (req, res) => {
       identity = await resolveIdentity(domain);
     }
     if (!identity) {
-      identity = { wallet, domain, avatar: null, displayName: null, bio: null, socials: {}, reputation: null, credentials: [], resolvedAt: Math.floor(Date.now() / 1000) };
+      identity = {
+        wallet, domain, avatar: null, displayName: null, bio: null,
+        socials: {}, reputation: null, credentials: [],
+        resolvedAt: Math.floor(Date.now() / 1000),
+      };
     }
     try {
       identity.reputation = await computeReputation(wallet);
-    } catch { /* optional */ }
+    } catch {}
     res.json(identity);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /auth/logout — Invalidate session
 router.post("/logout", authenticate, (req, res) => {
   const token = req.headers.authorization?.slice(7);
   if (token) invalidateSession(token);

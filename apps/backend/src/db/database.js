@@ -8,7 +8,6 @@ const dbPath = join(__dirname, "..", "..", "data.db");
 const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
 
-// Create tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
