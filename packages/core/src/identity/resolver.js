@@ -55,8 +55,10 @@ export async function getSnsRecords(domain, network = "devnet") {
       try {
         const res = await getRecordV2(conn, clean, record);
         if (res?.deserializedContent) records[key] = res.deserializedContent;
-      } catch {}
-    })
+      } catch {
+        // Ignore
+      }
+    }),
   );
 
   return records;

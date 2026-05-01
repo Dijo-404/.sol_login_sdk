@@ -2,7 +2,10 @@ import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { useMemo, useEffect } from "react";
-import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
+import {
+  ConnectionProvider,
+  WalletProvider,
+} from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { SolLoginProvider } from "@sol-login/react";
 import { SolLoginClient } from "@sol-login/core";
@@ -19,22 +22,29 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const SOLANA_NETWORK = import.meta.env.VITE_SOLANA_NETWORK || "devnet";
-const RPC_ENDPOINT = import.meta.env.VITE_SOLANA_RPC || "https://api.devnet.solana.com";
+const RPC_ENDPOINT =
+  import.meta.env.VITE_SOLANA_RPC || "https://api.devnet.solana.com";
 
 function App() {
   useEffect(() => {
-    import("@solflare-wallet/metamask-wallet-standard").then((mod) => {
-      if (typeof mod.registerWallet === "function") mod.registerWallet();
-      else if (typeof mod.default === "function") mod.default();
-    }).catch(() => {});
+    import("@solflare-wallet/metamask-wallet-standard")
+      .then((mod) => {
+        if (typeof mod.registerWallet === "function") mod.registerWallet();
+        else if (typeof mod.default === "function") mod.default();
+      })
+      .catch(() => {});
   }, []);
 
   const wallets = useMemo(() => [], []);
 
-  const solLoginClient = useMemo(() => new SolLoginClient({
-    apiUrl: API_URL,
-    network: SOLANA_NETWORK,
-  }), []);
+  const solLoginClient = useMemo(
+    () =>
+      new SolLoginClient({
+        apiUrl: API_URL,
+        network: SOLANA_NETWORK,
+      }),
+    [],
+  );
 
   return (
     <div className="App relative" data-testid="app-root">

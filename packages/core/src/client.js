@@ -6,8 +6,12 @@ export class SolLoginClient {
     this._token = null;
   }
 
-  get token() { return this._token; }
-  set token(t) { this._token = t; }
+  get token() {
+    return this._token;
+  }
+  set token(t) {
+    this._token = t;
+  }
 
   _headers() {
     const h = { "Content-Type": "application/json" };

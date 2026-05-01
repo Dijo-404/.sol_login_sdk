@@ -2,14 +2,23 @@ import { motion } from "framer-motion";
 import CodeBlock from "@/components/CodeBlock";
 
 const FeatureCard = ({ feature, index = 0 }) => {
-  const accentColor = feature.accent === "teal" ? "#14F195" : feature.accent === "accent" ? "#00C2FF" : "#9945FF";
+  const accentColor =
+    feature.accent === "teal"
+      ? "#14F195"
+      : feature.accent === "accent"
+        ? "#00C2FF"
+        : "#9945FF";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.55, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+      transition={{
+        duration: 0.55,
+        delay: index * 0.06,
+        ease: [0.22, 1, 0.36, 1],
+      }}
       className="group relative glass-card glass-card-hover noise overflow-hidden"
       data-testid={`feature-card-${index}`}
     >
@@ -22,16 +31,25 @@ const FeatureCard = ({ feature, index = 0 }) => {
         <div className="flex items-center gap-2 mono-label mb-4">
           <span
             className="w-1.5 h-1.5 rounded-full"
-            style={{ background: accentColor, boxShadow: `0 0 8px ${accentColor}` }}
+            style={{
+              background: accentColor,
+              boxShadow: `0 0 8px ${accentColor}`,
+            }}
           />
           0{index + 1}
         </div>
         <h3 className="font-display text-xl md:text-2xl font-medium tracking-tight text-white">
           {feature.title}
         </h3>
-        <p className="mt-2 text-sm text-slate-400 leading-relaxed">{feature.desc}</p>
+        <p className="mt-2 text-sm text-slate-400 leading-relaxed">
+          {feature.desc}
+        </p>
         <div className="mt-5">
-          <CodeBlock code={feature.code} language="tsx" accent={feature.accent} />
+          <CodeBlock
+            code={feature.code}
+            language="tsx"
+            accent={feature.accent}
+          />
         </div>
       </div>
     </motion.div>

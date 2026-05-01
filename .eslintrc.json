@@ -1,0 +1,1 @@
+{"extends": ["eslint:recommended", "plugin:react/recommended"], "env": {"browser": true, "node": true, "es2022": true}, "parserOptions": {"sourceType": "module", "ecmaVersion": "latest", "ecmaFeatures": {"jsx": true}}, "settings": {"react": {"version": "detect"}}, "rules": {"react/prop-types": "off", "react/react-in-jsx-scope": "off", "no-unused-vars": "warn"}}

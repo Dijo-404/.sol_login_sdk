@@ -16,7 +16,9 @@ router.get("/:wallet", async (req, res) => {
 router.post("/:wallet/refresh", authenticate, async (req, res) => {
   try {
     const db = (await import("../db/database.js")).default;
-    db.prepare("DELETE FROM reputation_cache WHERE wallet = ?").run(req.params.wallet);
+    db.prepare("DELETE FROM reputation_cache WHERE wallet = ?").run(
+      req.params.wallet,
+    );
     const score = await computeReputation(req.params.wallet);
     res.json(score);
   } catch (err) {

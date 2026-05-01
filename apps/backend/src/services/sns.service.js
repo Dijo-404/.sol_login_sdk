@@ -1,4 +1,8 @@
-import { resolveDomain, reverseResolveDomain, buildIdentity } from "@sol-login/core";
+import {
+  resolveDomain,
+  reverseResolveDomain,
+  buildIdentity,
+} from "@sol-login/core";
 import { config } from "../config/env.js";
 
 export async function resolveIdentity(name) {

@@ -117,12 +117,12 @@ sequenceDiagram
 
 Four circuit types are supported:
 
-| Circuit | Private Inputs | Public Inputs | Purpose |
-|---|---|---|---|
-| `reputation_threshold` | score, salt | threshold, commitment | Prove score exceeds threshold |
-| `wallet_age` | firstTxTimestamp, salt | minAge, commitment, now | Prove wallet age exceeds minimum |
-| `sybil_nullifier` | domainHash, secret | nullifier, appId | Per-app unique human proof |
-| `social_ownership` | handle, secret | commitment | Prove social account ownership |
+| Circuit                | Private Inputs         | Public Inputs           | Purpose                          |
+| ---------------------- | ---------------------- | ----------------------- | -------------------------------- |
+| `reputation_threshold` | score, salt            | threshold, commitment   | Prove score exceeds threshold    |
+| `wallet_age`           | firstTxTimestamp, salt | minAge, commitment, now | Prove wallet age exceeds minimum |
+| `sybil_nullifier`      | domainHash, secret     | nullifier, appId        | Per-app unique human proof       |
+| `social_ownership`     | handle, secret         | commitment              | Prove social account ownership   |
 
 ---
 
@@ -161,6 +161,7 @@ pnpm dev:all
 ```
 
 This starts:
+
 - Frontend at `http://localhost:5173`
 - Backend API at `http://localhost:4000`
 
@@ -171,20 +172,20 @@ yarn add @sol-login/react @sol-login/core
 ```
 
 ```jsx
-import { SolLoginProvider, useSolLogin } from '@sol-login/react'
+import { SolLoginProvider, useSolLogin } from "@sol-login/react";
 
 function App() {
   return (
     <SolLoginProvider apiUrl="https://api.sollogin.id">
       <Page />
     </SolLoginProvider>
-  )
+  );
 }
 
 function Page() {
-  const { identity } = useSolLogin()
-  if (!identity) return <SolLoginButton />
-  return <h1>gm, {identity.domain}</h1>
+  const { identity } = useSolLogin();
+  if (!identity) return <SolLoginButton />;
+  return <h1>gm, {identity.domain}</h1>;
 }
 ```
 
@@ -208,6 +209,7 @@ packages/core/src/
 ```
 
 Key exports:
+
 - `SolLoginClient` -- API client with auth, identity, reputation, and proof methods
 - `buildChallengeMessage` -- Generates the sign-in challenge string
 - `resolveDomain` / `reverseResolveDomain` -- SNS resolution helpers
@@ -225,6 +227,7 @@ packages/react/src/
 ```
 
 Key exports:
+
 - `SolLoginProvider` -- Wraps the app with identity state
 - `useSolLogin` -- Hook returning identity, login, logout, requestProof
 
@@ -238,12 +241,13 @@ packages/express/src/
 ```
 
 Usage:
-```js
-import { verifySolSession } from '@sol-login/express'
 
-app.get('/protected', verifySolSession(JWT_SECRET), (req, res) => {
-  res.json({ wallet: req.solIdentity.wallet })
-})
+```js
+import { verifySolSession } from "@sol-login/express";
+
+app.get("/protected", verifySolSession(JWT_SECRET), (req, res) => {
+  res.json({ wallet: req.solIdentity.wallet });
+});
 ```
 
 ---
@@ -252,19 +256,19 @@ app.get('/protected', verifySolSession(JWT_SECRET), (req, res) => {
 
 ### Endpoints
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `POST` | `/auth/challenge` | No | Issue nonce + message for wallet to sign |
-| `POST` | `/auth/verify` | No | Verify signature, resolve identity, issue JWT |
-| `GET` | `/auth/me` | Yes | Return current session identity |
-| `POST` | `/auth/logout` | Yes | Invalidate session |
-| `GET` | `/identity/:name` | No | Resolve .sol name to SolIdentity |
-| `GET` | `/identity/reverse/:wallet` | No | Reverse resolve wallet to .sol |
-| `GET` | `/identity/explore/leaderboard` | No | List all known identities |
-| `GET` | `/reputation/:wallet` | No | Get reputation score breakdown |
-| `POST` | `/reputation/:wallet/refresh` | Yes | Force re-index reputation |
-| `POST` | `/proof/verify` | Yes | Submit ZK proof for verification |
-| `GET` | `/proof/:wallet/credentials` | No | Get verified credentials |
+| Method | Path                            | Auth | Description                                   |
+| ------ | ------------------------------- | ---- | --------------------------------------------- |
+| `POST` | `/auth/challenge`               | No   | Issue nonce + message for wallet to sign      |
+| `POST` | `/auth/verify`                  | No   | Verify signature, resolve identity, issue JWT |
+| `GET`  | `/auth/me`                      | Yes  | Return current session identity               |
+| `POST` | `/auth/logout`                  | Yes  | Invalidate session                            |
+| `GET`  | `/identity/:name`               | No   | Resolve .sol name to SolIdentity              |
+| `GET`  | `/identity/reverse/:wallet`     | No   | Reverse resolve wallet to .sol                |
+| `GET`  | `/identity/explore/leaderboard` | No   | List all known identities                     |
+| `GET`  | `/reputation/:wallet`           | No   | Get reputation score breakdown                |
+| `POST` | `/reputation/:wallet/refresh`   | Yes  | Force re-index reputation                     |
+| `POST` | `/proof/verify`                 | Yes  | Submit ZK proof for verification              |
+| `GET`  | `/proof/:wallet/credentials`    | No   | Get verified credentials                      |
 
 ### Data Model
 
@@ -302,12 +306,12 @@ erDiagram
 
 Located in `packages/circuits/`. Each circuit is written in Circom 2.0 and compiled to Groth16.
 
-| File | Description |
-|---|---|
-| `reputation_threshold.circom` | Prove reputation score >= threshold |
-| `wallet_age.circom` | Prove wallet age >= N months |
-| `sybil_nullifier.circom` | Per-app uniqueness via Poseidon nullifier |
-| `social_ownership.circom` | Prove social account ownership blind |
+| File                          | Description                               |
+| ----------------------------- | ----------------------------------------- |
+| `reputation_threshold.circom` | Prove reputation score >= threshold       |
+| `wallet_age.circom`           | Prove wallet age >= N months              |
+| `sybil_nullifier.circom`      | Per-app uniqueness via Poseidon nullifier |
+| `social_ownership.circom`     | Prove social account ownership blind      |
 
 ### Compile
 
@@ -356,6 +360,7 @@ pnpm lint             # Lint all packages
 ### Wallet Support
 
 The demo app supports all Wallet Standard-compliant wallets:
+
 - Phantom
 - Solflare
 - Backpack
@@ -391,13 +396,13 @@ The backend uses SQLite by default. For production, swap `better-sqlite3` for Po
 
 Scores range from 0 to 1000, computed from on-chain data:
 
-| Factor | Weight | Source |
-|---|---|---|
-| DeFi activity | 30% | Transaction count (Jupiter, Marinade, Drift) |
-| Governance | 25% | SOL balance proxy (Realms participation) |
-| NFT activity | 15% | Transaction frequency (Tensor, Magic Eden) |
-| Domain age | 20% | Time since first transaction |
-| Social verification | 10% | Token account presence |
+| Factor              | Weight | Source                                       |
+| ------------------- | ------ | -------------------------------------------- |
+| DeFi activity       | 30%    | Transaction count (Jupiter, Marinade, Drift) |
+| Governance          | 25%    | SOL balance proxy (Realms participation)     |
+| NFT activity        | 15%    | Transaction frequency (Tensor, Magic Eden)   |
+| Domain age          | 20%    | Time since first transaction                 |
+| Social verification | 10%    | Token account presence                       |
 
 Scores are cached for 6 hours in SQLite with an option to force re-index.
 

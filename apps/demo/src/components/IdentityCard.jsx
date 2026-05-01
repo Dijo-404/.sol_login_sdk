@@ -39,23 +39,37 @@ const IdentityCard = ({ identity, compact = false }) => {
           <div className="relative shrink-0">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-sol-purple to-sol-teal blur-xl opacity-50" />
             {identity.avatar ? (
-              <img src={identity.avatar} alt={identity.domain} className="relative w-24 h-24 md:w-28 md:h-28 rounded-2xl object-cover ring-1 ring-white/20" data-testid="identity-avatar" />
+              <img
+                src={identity.avatar}
+                alt={identity.domain}
+                className="relative w-24 h-24 md:w-28 md:h-28 rounded-2xl object-cover ring-1 ring-white/20"
+                data-testid="identity-avatar"
+              />
             ) : (
-              <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-gradient-to-br from-sol-purple to-sol-teal ring-1 ring-white/20 flex items-center justify-center text-3xl font-display font-bold text-white" data-testid="identity-avatar">
-                {(identity.domain || identity.wallet)?.[0]?.toUpperCase() || "?"}
+              <div
+                className="relative w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-gradient-to-br from-sol-purple to-sol-teal ring-1 ring-white/20 flex items-center justify-center text-3xl font-display font-bold text-white"
+                data-testid="identity-avatar"
+              >
+                {(identity.domain || identity.wallet)?.[0]?.toUpperCase() ||
+                  "?"}
               </div>
             )}
           </div>
 
           <div className="flex-1 min-w-0">
-            <h2 className="font-display text-3xl md:text-4xl tracking-tight font-medium text-white" data-testid="identity-domain">
+            <h2
+              className="font-display text-3xl md:text-4xl tracking-tight font-medium text-white"
+              data-testid="identity-domain"
+            >
               {identity.domain}
             </h2>
             {identity.displayName && (
               <p className="text-slate-400 mt-1">{identity.displayName}</p>
             )}
             {identity.bio && !compact && (
-              <p className="text-sm text-slate-400 mt-3 max-w-md leading-relaxed">{identity.bio}</p>
+              <p className="text-sm text-slate-400 mt-3 max-w-md leading-relaxed">
+                {identity.bio}
+              </p>
             )}
 
             <button
@@ -98,12 +112,18 @@ const IdentityCard = ({ identity, compact = false }) => {
                       <div
                         key={i}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-mono border border-sol-teal/30 text-sol-teal bg-sol-teal/[0.06]"
-                        style={{ boxShadow: "0 0 16px -6px rgba(20, 241, 149, 0.4)" }}
+                        style={{
+                          boxShadow: "0 0 16px -6px rgba(20, 241, 149, 0.4)",
+                        }}
                         data-testid={`credential-${c.type}`}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-sol-teal" />
                         {meta?.label || c.type}
-                        {c.threshold && <span className="text-sol-teal/70">≥{c.threshold}</span>}
+                        {c.threshold && (
+                          <span className="text-sol-teal/70">
+                            ≥{c.threshold}
+                          </span>
+                        )}
                       </div>
                     );
                   })}

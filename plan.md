@@ -16,12 +16,14 @@ Think: **Sign in with Google, but onchain, permissionless, and owned by the user
 ## 2. Core Features
 
 ### 2.1 Authentication
+
 - **Sign in with .sol** — wallet signature + `.sol` domain resolution in one flow
 - **Session tokens** — JWT-based sessions tied to wallet pubkey, rotatable by user
 - **Multi-wallet support** — Phantom, Backpack, Solflare, Glow
 - **Fallback mode** — raw wallet address login if no `.sol` domain registered
 
 ### 2.2 Identity Resolution
+
 - Resolve `.sol` → wallet address via SNS Protocol
 - Reverse resolve wallet address → `.sol` name
 - Pull linked socials: Twitter/X, GitHub, Discord, Farcaster (via SNS records)
@@ -29,6 +31,7 @@ Think: **Sign in with Google, but onchain, permissionless, and owned by the user
 - Expose all data as a composable `SolIdentity` object
 
 ### 2.3 ZK-Proof Verification (Core Differentiator)
+
 - **ZK Age/Tier Proof** — prove wallet is > N months old without revealing exact age
 - **ZK Reputation Proof** — prove reputation score is above a threshold without revealing exact score
 - **ZK Social Proof** — prove ownership of a social account without revealing the account handle
@@ -37,6 +40,7 @@ Think: **Sign in with Google, but onchain, permissionless, and owned by the user
 - Smart contracts on Solana verify proofs onchain via a custom ZK verifier program
 
 ### 2.4 Reputation Engine
+
 - Aggregate onchain activity into a `ReputationScore` (0–1000):
   - DeFi activity (Jupiter swaps, Marinade staking, Drift positions)
   - Governance participation (Realms votes)
@@ -47,6 +51,7 @@ Think: **Sign in with Google, but onchain, permissionless, and owned by the user
 - Third-party dApps query reputation without reading raw activity
 
 ### 2.5 Developer SDK
+
 - `@sol-login/core` — framework-agnostic TypeScript SDK
 - `@sol-login/react` — React hooks and pre-built UI components
 - `@sol-login/express` — Express.js middleware for backend session handling
@@ -54,6 +59,7 @@ Think: **Sign in with Google, but onchain, permissionless, and owned by the user
 - Callback hooks: `onLogin`, `onLogout`, `onIdentityResolved`, `onProofVerified`
 
 ### 2.6 Identity Dashboard (Demo App)
+
 - Visual explorer for a user's `.sol` identity card
 - Shows: avatar, name, linked socials, reputation score, ZK credentials held
 - Shareable public profile URL: `solid.app/[name].sol`
@@ -98,36 +104,39 @@ Think: **Sign in with Google, but onchain, permissionless, and owned by the user
 ## 4. Tech Stack
 
 ### Frontend
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 14 (App Router) |
-| Wallet Adapter | `@solana/wallet-adapter-react` |
-| SNS Resolution | `@bonfida/spl-name-service` |
-| ZK Client | `snarkjs` + compiled WASM circuits |
-| State | Zustand |
-| Styling | Tailwind CSS + shadcn/ui |
-| SDK Packaging | tsup + Turborepo monorepo |
+
+| Layer          | Technology                         |
+| -------------- | ---------------------------------- |
+| Framework      | Next.js 14 (App Router)            |
+| Wallet Adapter | `@solana/wallet-adapter-react`     |
+| SNS Resolution | `@bonfida/spl-name-service`        |
+| ZK Client      | `snarkjs` + compiled WASM circuits |
+| State          | Zustand                            |
+| Styling        | Tailwind CSS + shadcn/ui           |
+| SDK Packaging  | tsup + Turborepo monorepo          |
 
 ### Backend
-| Layer | Technology |
-|---|---|
-| Runtime | Node.js 20 + TypeScript |
-| Framework | Express.js |
-| Auth | JWT (`jsonwebtoken`) + Ed25519 signature verification |
-| Session Store | Redis (via `ioredis`) |
-| Database | PostgreSQL + Prisma ORM |
-| Solana Client | `@solana/web3.js` |
-| ZK Verifier | Custom Anchor program (Groth16 verifier) |
-| Queue | BullMQ (reputation indexing jobs) |
+
+| Layer         | Technology                                            |
+| ------------- | ----------------------------------------------------- |
+| Runtime       | Node.js 20 + TypeScript                               |
+| Framework     | Express.js                                            |
+| Auth          | JWT (`jsonwebtoken`) + Ed25519 signature verification |
+| Session Store | Redis (via `ioredis`)                                 |
+| Database      | PostgreSQL + Prisma ORM                               |
+| Solana Client | `@solana/web3.js`                                     |
+| ZK Verifier   | Custom Anchor program (Groth16 verifier)              |
+| Queue         | BullMQ (reputation indexing jobs)                     |
 
 ### Blockchain
-| Layer | Technology |
-|---|---|
-| Network | Solana Devnet → Mainnet |
-| Smart Contracts | Anchor Framework (Rust) |
-| Identity Protocol | SNS (Solana Name Service) |
-| ZK Circuits | Circom 2.0 + Groth16 |
-| ZK Verifier | Solana Anchor program calling `solana_zk_token_sdk` primitives |
+
+| Layer             | Technology                                                     |
+| ----------------- | -------------------------------------------------------------- |
+| Network           | Solana Devnet → Mainnet                                        |
+| Smart Contracts   | Anchor Framework (Rust)                                        |
+| Identity Protocol | SNS (Solana Name Service)                                      |
+| ZK Circuits       | Circom 2.0 + Groth16                                           |
+| ZK Verifier       | Solana Anchor program calling `solana_zk_token_sdk` primitives |
 
 ---
 
@@ -274,6 +283,7 @@ sol-login/
 ### Circuits
 
 #### `reputation_threshold.circom`
+
 ```
 Inputs (private): reputationScore, salt
 Inputs (public):  threshold, commitment
@@ -285,6 +295,7 @@ Logic:
 ```
 
 #### `wallet_age.circom`
+
 ```
 Inputs (private): firstTxTimestamp, salt
 Inputs (public):  minAgeSeconds, commitment, currentTimestamp
@@ -292,6 +303,7 @@ Outputs:          proof that wallet age >= minAgeSeconds
 ```
 
 #### `sybil_nullifier.circom`
+
 ```
 Inputs (private): solDomainHash, userSecret
 Inputs (public):  nullifier, appId
@@ -361,6 +373,7 @@ FRONTEND                          BACKEND                        SOLANA
 ```
 
 ### Challenge Message Format
+
 ```
 Sign in to [App Name] with your Solana identity.
 
@@ -378,76 +391,86 @@ This request will not trigger any blockchain transaction or cost any fees.
 ## 8. Backend API Endpoints
 
 ### Auth
-| Method | Path | Description |
-|---|---|---|
-| POST | `/auth/challenge` | Issue nonce + message for wallet to sign |
-| POST | `/auth/verify` | Verify signature, issue JWT session |
-| POST | `/auth/logout` | Invalidate session in Redis |
-| GET | `/auth/me` | Return current session identity |
+
+| Method | Path              | Description                              |
+| ------ | ----------------- | ---------------------------------------- |
+| POST   | `/auth/challenge` | Issue nonce + message for wallet to sign |
+| POST   | `/auth/verify`    | Verify signature, issue JWT session      |
+| POST   | `/auth/logout`    | Invalidate session in Redis              |
+| GET    | `/auth/me`        | Return current session identity          |
 
 ### Identity
-| Method | Path | Description |
-|---|---|---|
-| GET | `/identity/:name` | Resolve `.sol` name → full `SolIdentity` |
-| GET | `/identity/reverse/:wallet` | Reverse resolve wallet → `.sol` name |
-| GET | `/identity/:name/social` | Get linked social accounts |
+
+| Method | Path                        | Description                              |
+| ------ | --------------------------- | ---------------------------------------- |
+| GET    | `/identity/:name`           | Resolve `.sol` name → full `SolIdentity` |
+| GET    | `/identity/reverse/:wallet` | Reverse resolve wallet → `.sol` name     |
+| GET    | `/identity/:name/social`    | Get linked social accounts               |
 
 ### Reputation
-| Method | Path | Description |
-|---|---|---|
-| GET | `/reputation/:wallet` | Get reputation breakdown + total score |
-| POST | `/reputation/:wallet/refresh` | Trigger async re-index of onchain activity |
+
+| Method | Path                          | Description                                |
+| ------ | ----------------------------- | ------------------------------------------ |
+| GET    | `/reputation/:wallet`         | Get reputation breakdown + total score     |
+| POST   | `/reputation/:wallet/refresh` | Trigger async re-index of onchain activity |
 
 ### ZK Proofs
-| Method | Path | Description |
-|---|---|---|
-| POST | `/proof/verify` | Submit proof for onchain verification |
-| GET | `/proof/:wallet/credentials` | Get all verified credentials for a wallet |
+
+| Method | Path                         | Description                               |
+| ------ | ---------------------------- | ----------------------------------------- |
+| POST   | `/proof/verify`              | Submit proof for onchain verification     |
+| GET    | `/proof/:wallet/credentials` | Get all verified credentials for a wallet |
 
 ---
 
 ## 9. Data Models
 
 ### `SolIdentity` (TypeScript type in `@sol-login/core`)
+
 ```typescript
 interface SolIdentity {
-  wallet: string               // Base58 pubkey
-  domain: string | null        // "dijo.sol"
-  avatar: string | null        // IPFS or Arweave URL
-  displayName: string | null
-  bio: string | null
+  wallet: string; // Base58 pubkey
+  domain: string | null; // "dijo.sol"
+  avatar: string | null; // IPFS or Arweave URL
+  displayName: string | null;
+  bio: string | null;
   socials: {
-    twitter?: string
-    github?: string
-    discord?: string
-    farcaster?: string
-  }
-  reputation: ReputationScore | null
-  credentials: ZkCredential[]
-  resolvedAt: number           // Unix timestamp
+    twitter?: string;
+    github?: string;
+    discord?: string;
+    farcaster?: string;
+  };
+  reputation: ReputationScore | null;
+  credentials: ZkCredential[];
+  resolvedAt: number; // Unix timestamp
 }
 
 interface ReputationScore {
-  total: number                // 0–1000
+  total: number; // 0–1000
   breakdown: {
-    defi: number
-    governance: number
-    nft: number
-    domainAge: number
-    socialVerification: number
-  }
+    defi: number;
+    governance: number;
+    nft: number;
+    domainAge: number;
+    socialVerification: number;
+  };
 }
 
 interface ZkCredential {
-  type: 'reputation_threshold' | 'wallet_age' | 'sybil_nullifier' | 'social_ownership'
-  threshold?: number
-  verifiedAt: number
-  txSignature: string          // Solana tx where proof was verified
-  expiresAt: number | null
+  type:
+    | "reputation_threshold"
+    | "wallet_age"
+    | "sybil_nullifier"
+    | "social_ownership";
+  threshold?: number;
+  verifiedAt: number;
+  txSignature: string; // Solana tx where proof was verified
+  expiresAt: number | null;
 }
 ```
 
 ### Prisma Schema (`schema.prisma`)
+
 ```prisma
 model Session {
   id          String   @id @default(cuid())
@@ -485,6 +508,7 @@ model VerifiedCredential {
 ### Step 1 — Environment Setup
 
 **Backend `.env`**
+
 ```env
 PORT=4000
 DATABASE_URL=postgresql://user:pass@localhost:5432/sollogin
@@ -496,6 +520,7 @@ JWT_EXPIRY=24h
 ```
 
 **Frontend `.env.local`**
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_SOLANA_NETWORK=devnet
@@ -506,36 +531,40 @@ NEXT_PUBLIC_PROGRAM_ID=<your_anchor_program_id>
 
 ```typescript
 // apps/demo/lib/sdk.ts
-import { SolLoginClient } from '@sol-login/core'
+import { SolLoginClient } from "@sol-login/core";
 
 export const solLogin = new SolLoginClient({
   apiUrl: process.env.NEXT_PUBLIC_API_URL!,
-  network: process.env.NEXT_PUBLIC_SOLANA_NETWORK as 'devnet' | 'mainnet-beta',
-  circuitsPath: '/circuits',          // served from /public/circuits
-})
+  network: process.env.NEXT_PUBLIC_SOLANA_NETWORK as "devnet" | "mainnet-beta",
+  circuitsPath: "/circuits", // served from /public/circuits
+});
 ```
 
 ### Step 3 — Wrap App with Providers
 
 ```tsx
 // apps/demo/app/layout.tsx
-import { SolLoginProvider } from '@sol-login/react'
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
-import { PhantomWalletAdapter, BackpackWalletAdapter } from '@solana/wallet-adapter-wallets'
+import { SolLoginProvider } from "@sol-login/react";
+import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import {
+  ConnectionProvider,
+  WalletProvider,
+} from "@solana/wallet-adapter-react";
+import {
+  PhantomWalletAdapter,
+  BackpackWalletAdapter,
+} from "@solana/wallet-adapter-wallets";
 
 export default function RootLayout({ children }) {
-  const wallets = [new PhantomWalletAdapter(), new BackpackWalletAdapter()]
+  const wallets = [new PhantomWalletAdapter(), new BackpackWalletAdapter()];
 
   return (
     <ConnectionProvider endpoint={process.env.NEXT_PUBLIC_SOLANA_RPC!}>
       <WalletProvider wallets={wallets} autoConnect>
-        <SolLoginProvider client={solLogin}>
-          {children}
-        </SolLoginProvider>
+        <SolLoginProvider client={solLogin}>{children}</SolLoginProvider>
       </WalletProvider>
     </ConnectionProvider>
-  )
+  );
 }
 ```
 
@@ -543,10 +572,10 @@ export default function RootLayout({ children }) {
 
 ```tsx
 // Any page or component
-import { SolLoginButton, useSolLogin } from '@sol-login/react'
+import { SolLoginButton, useSolLogin } from "@sol-login/react";
 
 export default function Navbar() {
-  const { identity, isLoading, logout } = useSolLogin()
+  const { identity, isLoading, logout } = useSolLogin();
 
   return (
     <nav>
@@ -558,12 +587,12 @@ export default function Navbar() {
         </div>
       ) : (
         <SolLoginButton
-          onSuccess={(identity) => console.log('Logged in:', identity)}
+          onSuccess={(identity) => console.log("Logged in:", identity)}
           onError={(err) => console.error(err)}
         />
       )}
     </nav>
-  )
+  );
 }
 ```
 
@@ -571,14 +600,14 @@ export default function Navbar() {
 
 ```typescript
 // apps/backend/src/routes/reputation.ts
-import { authenticate } from '../middleware/authenticate'
+import { authenticate } from "../middleware/authenticate";
 
-router.get('/reputation/:wallet', authenticate, async (req, res) => {
-  const { wallet } = req.params
+router.get("/reputation/:wallet", authenticate, async (req, res) => {
+  const { wallet } = req.params;
   // req.user is populated by authenticate middleware
-  const score = await reputationService.getScore(wallet)
-  res.json(score)
-})
+  const score = await reputationService.getScore(wallet);
+  res.json(score);
+});
 ```
 
 ### Step 6 — ZK Proof Request from Frontend
@@ -613,6 +642,7 @@ export function PremiumFeature() {
 ## 11. Anchor Program — Key Instructions
 
 ### `verify_proof` instruction
+
 ```rust
 pub fn verify_proof(
     ctx: Context<VerifyProof>,
@@ -653,12 +683,12 @@ pub fn verify_proof(
 // packages/core/src/reputation/scorer.ts
 
 const WEIGHTS = {
-  defi:               0.30,   // Jupiter/Marinade/Drift activity
-  governance:         0.25,   // Realms votes cast
-  nft:                0.15,   // Tensor/MagicEden transactions
-  domainAge:          0.20,   // .sol domain registration age
-  socialVerification: 0.10,   // Linked + verified social accounts
-}
+  defi: 0.3, // Jupiter/Marinade/Drift activity
+  governance: 0.25, // Realms votes cast
+  nft: 0.15, // Tensor/MagicEden transactions
+  domainAge: 0.2, // .sol domain registration age
+  socialVerification: 0.1, // Linked + verified social accounts
+};
 
 async function computeScore(wallet: string): Promise<ReputationScore> {
   const [defi, gov, nft, domain, social] = await Promise.all([
@@ -667,17 +697,26 @@ async function computeScore(wallet: string): Promise<ReputationScore> {
     scoreNftActivity(wallet),
     scoreDomainAge(wallet),
     scoreSocialLinks(wallet),
-  ])
+  ]);
 
   const total = Math.round(
-    defi   * WEIGHTS.defi   * 1000 +
-    gov    * WEIGHTS.governance * 1000 +
-    nft    * WEIGHTS.nft    * 1000 +
-    domain * WEIGHTS.domainAge * 1000 +
-    social * WEIGHTS.socialVerification * 1000
-  )
+    defi * WEIGHTS.defi * 1000 +
+      gov * WEIGHTS.governance * 1000 +
+      nft * WEIGHTS.nft * 1000 +
+      domain * WEIGHTS.domainAge * 1000 +
+      social * WEIGHTS.socialVerification * 1000,
+  );
 
-  return { total: Math.min(total, 1000), breakdown: { defi, governance: gov, nft, domainAge: domain, socialVerification: social } }
+  return {
+    total: Math.min(total, 1000),
+    breakdown: {
+      defi,
+      governance: gov,
+      nft,
+      domainAge: domain,
+      socialVerification: social,
+    },
+  };
 }
 ```
 
@@ -686,6 +725,7 @@ async function computeScore(wallet: string): Promise<ReputationScore> {
 ## 13. Third-Party Integration Guide (for dApp developers)
 
 ### Minimal integration — 3 lines
+
 ```tsx
 import { SolLoginProvider, SolLoginButton } from '@sol-login/react'
 
@@ -700,32 +740,34 @@ const { identity } = useSolLogin()
 ```
 
 ### Gate a feature behind ZK reputation proof
+
 ```tsx
-const { requestProof, credential } = useZkProof()
-await requestProof({ type: 'reputation_threshold', threshold: 300 })
+const { requestProof, credential } = useZkProof();
+await requestProof({ type: "reputation_threshold", threshold: 300 });
 // credential is now a signed JWT + onchain tx signature
 ```
 
 ### Backend: verify a session token
-```typescript
-import { verifySolSession } from '@sol-login/express'
 
-app.get('/protected', verifySolSession(process.env.JWT_SECRET), (req, res) => {
-  res.json({ wallet: req.solIdentity.wallet })
-})
+```typescript
+import { verifySolSession } from "@sol-login/express";
+
+app.get("/protected", verifySolSession(process.env.JWT_SECRET), (req, res) => {
+  res.json({ wallet: req.solIdentity.wallet });
+});
 ```
 
 ---
 
 ## 14. Demo App Pages
 
-| Route | Description |
-|---|---|
-| `/` | Landing page with SDK pitch + "Try it live" login demo |
+| Route        | Description                                                    |
+| ------------ | -------------------------------------------------------------- |
+| `/`          | Landing page with SDK pitch + "Try it live" login demo         |
 | `/dashboard` | Logged-in user's full identity card + reputation + credentials |
-| `/[name]` | Public profile page for any `.sol` name |
-| `/explore` | Leaderboard of top reputation scores |
-| `/docs` | Embedded quickstart + API reference |
+| `/[name]`    | Public profile page for any `.sol` name                        |
+| `/explore`   | Leaderboard of top reputation scores                           |
+| `/docs`      | Embedded quickstart + API reference                            |
 
 ---
 

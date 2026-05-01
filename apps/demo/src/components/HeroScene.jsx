@@ -1,5 +1,11 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, Environment, MeshDistortMaterial, Sparkles, Stars } from "@react-three/drei";
+import {
+  Float,
+  Environment,
+  MeshDistortMaterial,
+  Sparkles,
+  Stars,
+} from "@react-three/drei";
 import { useRef, useMemo, Suspense } from "react";
 import * as THREE from "three";
 
@@ -38,7 +44,11 @@ const IdentityCard = () => {
         {/* small chip */}
         <mesh position={[1.05, -0.55, 0.05]}>
           <boxGeometry args={[0.5, 0.32, 0.02]} />
-          <meshStandardMaterial color="#1A1E2E" metalness={0.9} roughness={0.2} />
+          <meshStandardMaterial
+            color="#1A1E2E"
+            metalness={0.9}
+            roughness={0.2}
+          />
         </mesh>
         {/* edge glow purple */}
         <mesh position={[1.6, 0, 0]}>
@@ -54,32 +64,55 @@ const IdentityCard = () => {
   );
 };
 
-const OrbitalRing = ({ radius = 3.5, color = "#9945FF", speed = 0.5, tilt = 0.2 }) => {
+const OrbitalRing = ({
+  radius = 3.5,
+  color = "#9945FF",
+  speed = 0.5,
+  tilt = 0.2,
+}) => {
   const ref = useRef();
   useFrame((state) => {
-    if (ref.current) ref.current.rotation.z = state.clock.elapsedTime * speed * 0.3;
+    if (ref.current)
+      ref.current.rotation.z = state.clock.elapsedTime * speed * 0.3;
   });
   const points = useMemo(() => {
     const pts = [];
     const segments = 128;
     for (let i = 0; i <= segments; i++) {
       const a = (i / segments) * Math.PI * 2;
-      pts.push(new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius * 0.45, 0));
+      pts.push(
+        new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius * 0.45, 0),
+      );
     }
     return pts;
   }, [radius]);
-  const geometry = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points]);
+  const geometry = useMemo(
+    () => new THREE.BufferGeometry().setFromPoints(points),
+    [points],
+  );
 
   return (
     <group rotation={[tilt, 0, 0]} ref={ref}>
       <line geometry={geometry}>
-        <lineBasicMaterial color={color} transparent opacity={0.4} toneMapped={false} />
+        <lineBasicMaterial
+          color={color}
+          transparent
+          opacity={0.4}
+          toneMapped={false}
+        />
       </line>
     </group>
   );
 };
 
-const OrbitNode = ({ radius, speed, offset, color, size = 0.12, tilt = 0.2 }) => {
+const OrbitNode = ({
+  radius,
+  speed,
+  offset,
+  color,
+  size = 0.12,
+  tilt = 0.2,
+}) => {
   const ref = useRef();
   useFrame((state) => {
     if (!ref.current) return;
@@ -127,11 +160,33 @@ const Scene = () => {
     <>
       <ambientLight intensity={0.3} />
       <directionalLight position={[5, 5, 5]} intensity={0.8} color="#ffffff" />
-      <pointLight position={[-3, 0, 2]} intensity={2.5} color="#9945FF" distance={10} />
-      <pointLight position={[3, 0, 2]} intensity={2.5} color="#14F195" distance={10} />
-      <pointLight position={[0, -2, 3]} intensity={1.2} color="#00C2FF" distance={8} />
+      <pointLight
+        position={[-3, 0, 2]}
+        intensity={2.5}
+        color="#9945FF"
+        distance={10}
+      />
+      <pointLight
+        position={[3, 0, 2]}
+        intensity={2.5}
+        color="#14F195"
+        distance={10}
+      />
+      <pointLight
+        position={[0, -2, 3]}
+        intensity={1.2}
+        color="#00C2FF"
+        distance={8}
+      />
 
-      <Stars radius={50} depth={50} count={1500} factor={2.5} fade speed={0.6} />
+      <Stars
+        radius={50}
+        depth={50}
+        count={1500}
+        factor={2.5}
+        fade
+        speed={0.6}
+      />
       <Sparkles count={70} scale={8} size={2} speed={0.3} color="#9945FF" />
 
       <CenterCore />
@@ -141,11 +196,46 @@ const Scene = () => {
       <OrbitalRing radius={4.4} color="#14F195" tilt={-0.15} speed={0.3} />
       <OrbitalRing radius={5.4} color="#00C2FF" tilt={0.4} speed={0.2} />
 
-      <OrbitNode radius={3.2} speed={0.6} offset={0} color="#9945FF" size={0.14} tilt={0.25} />
-      <OrbitNode radius={3.2} speed={0.6} offset={Math.PI} color="#14F195" size={0.1} tilt={0.25} />
-      <OrbitNode radius={4.4} speed={0.4} offset={1} color="#00C2FF" size={0.12} tilt={-0.15} />
-      <OrbitNode radius={4.4} speed={0.4} offset={Math.PI + 0.5} color="#14F195" size={0.09} tilt={-0.15} />
-      <OrbitNode radius={5.4} speed={0.25} offset={2} color="#9945FF" size={0.08} tilt={0.4} />
+      <OrbitNode
+        radius={3.2}
+        speed={0.6}
+        offset={0}
+        color="#9945FF"
+        size={0.14}
+        tilt={0.25}
+      />
+      <OrbitNode
+        radius={3.2}
+        speed={0.6}
+        offset={Math.PI}
+        color="#14F195"
+        size={0.1}
+        tilt={0.25}
+      />
+      <OrbitNode
+        radius={4.4}
+        speed={0.4}
+        offset={1}
+        color="#00C2FF"
+        size={0.12}
+        tilt={-0.15}
+      />
+      <OrbitNode
+        radius={4.4}
+        speed={0.4}
+        offset={Math.PI + 0.5}
+        color="#14F195"
+        size={0.09}
+        tilt={-0.15}
+      />
+      <OrbitNode
+        radius={5.4}
+        speed={0.25}
+        offset={2}
+        color="#9945FF"
+        size={0.08}
+        tilt={0.4}
+      />
 
       <Environment preset="night" />
     </>
@@ -158,7 +248,11 @@ const HeroScene = () => {
       <Canvas
         dpr={[1, 1.6]}
         camera={{ position: [0, 0.4, 7], fov: 50 }}
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: "high-performance",
+        }}
       >
         <Suspense fallback={null}>
           <Scene />

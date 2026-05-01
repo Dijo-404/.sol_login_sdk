@@ -13,20 +13,22 @@ router.post("/verify", authenticate, async (req, res) => {
     if (!type) return res.status(400).json({ error: "proof type required" });
 
     // Simulate Groth16 verification delay
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
 
     const txSig = `${crypto.randomBytes(32).toString("base64url").slice(0, 44)}`;
 
     const id = crypto.randomUUID();
     const verifiedAt = new Date().toISOString();
     db.prepare(
-      "INSERT INTO verified_credentials (id, wallet, type, threshold, tx_sig, verified_at) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO verified_credentials (id, wallet, type, threshold, tx_sig, verified_at) VALUES (?, ?, ?, ?, ?, ?)",
     ).run(id, wallet, type, threshold || null, txSig, verifiedAt);
 
     const credential = {
-      type, threshold: threshold || null,
+      type,
+      threshold: threshold || null,
       verifiedAt: Math.floor(Date.now() / 1000),
-      txSignature: txSig, expiresAt: null,
+      txSignature: txSig,
+      expiresAt: null,
     };
 
     res.json({ verified: true, txSignature: txSig, credential });
@@ -37,9 +39,12 @@ router.post("/verify", authenticate, async (req, res) => {
 
 router.get("/:wallet/credentials", async (req, res) => {
   try {
-    const rows = db.prepare("SELECT * FROM verified_credentials WHERE wallet = ?").all(req.params.wallet);
-    const credentials = rows.map(c => ({
-      type: c.type, threshold: c.threshold,
+    const rows = db
+      .prepare("SELECT * FROM verified_credentials WHERE wallet = ?")
+      .all(req.params.wallet);
+    const credentials = rows.map((c) => ({
+      type: c.type,
+      threshold: c.threshold,
       verifiedAt: new Date(c.verified_at).getTime() / 1000,
       txSignature: c.tx_sig,
       expiresAt: c.expires_at ? new Date(c.expires_at).getTime() / 1000 : null,

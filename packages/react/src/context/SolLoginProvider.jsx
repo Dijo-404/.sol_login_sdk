@@ -1,5 +1,18 @@
-import { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
-import { SolLoginClient, storeToken, getStoredToken, clearToken, isTokenExpired } from "@sol-login/core";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+} from "react";
+import {
+  SolLoginClient,
+  storeToken,
+  getStoredToken,
+  clearToken,
+  isTokenExpired,
+} from "@sol-login/core";
 
 const SolLoginContext = createContext(null);
 
@@ -13,51 +26,75 @@ export const SolLoginProvider = ({ client, children }) => {
     const token = getStoredToken();
     if (token && !isTokenExpired(token)) {
       client.token = token;
-      client.me().then(setIdentity).catch(() => { clearToken(); client.token = null; });
+      client
+        .me()
+        .then(setIdentity)
+        .catch(() => {
+          clearToken();
+          client.token = null;
+        });
     }
   }, [client]);
 
   const openWalletPicker = useCallback(() => setWalletPickerOpen(true), []);
   const closeWalletPicker = useCallback(() => setWalletPickerOpen(false), []);
 
-  const login = useCallback(async (walletAddress, signMessage) => {
-    setIsConnecting(true);
-    try {
-      const { nonce, message } = await client.getChallenge(walletAddress);
+  const login = useCallback(
+    async (walletAddress, signMessage) => {
+      setIsConnecting(true);
+      try {
+        const { nonce, message } = await client.getChallenge(walletAddress);
 
-      const messageBytes = new TextEncoder().encode(message);
-      const signature = await signMessage(messageBytes);
+        const messageBytes = new TextEncoder().encode(message);
+        const signature = await signMessage(messageBytes);
 
-      const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-      const sigBase58 = ((bytes) => {
-        const digits = [0];
-        for (const byte of bytes) {
-          let carry = byte;
-          for (let j = 0; j < digits.length; j++) { carry += digits[j] << 8; digits[j] = carry % 58; carry = (carry / 58) | 0; }
-          while (carry > 0) { digits.push(carry % 58); carry = (carry / 58) | 0; }
-        }
-        let str = "";
-        for (let i = 0; i < bytes.length && bytes[i] === 0; i++) str += ALPHABET[0];
-        for (let i = digits.length - 1; i >= 0; i--) str += ALPHABET[digits[i]];
-        return str;
-      })(signature);
+        const ALPHABET =
+          "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        const sigBase58 = ((bytes) => {
+          const digits = [0];
+          for (const byte of bytes) {
+            let carry = byte;
+            for (let j = 0; j < digits.length; j++) {
+              carry += digits[j] << 8;
+              digits[j] = carry % 58;
+              carry = (carry / 58) | 0;
+            }
+            while (carry > 0) {
+              digits.push(carry % 58);
+              carry = (carry / 58) | 0;
+            }
+          }
+          let str = "";
+          for (let i = 0; i < bytes.length && bytes[i] === 0; i++)
+            str += ALPHABET[0];
+          for (let i = digits.length - 1; i >= 0; i--)
+            str += ALPHABET[digits[i]];
+          return str;
+        })(signature);
 
-      const { token, identity: resolved } = await client.verify(walletAddress, sigBase58);
+        const { token, identity: resolved } = await client.verify(
+          walletAddress,
+          sigBase58,
+        );
 
-      storeToken(token);
-      setIdentity(resolved);
-      setWalletPickerOpen(false);
-      return resolved;
-    } catch (err) {
-      console.error("Login failed:", err);
-      throw err;
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [client]);
+        storeToken(token);
+        setIdentity(resolved);
+        setWalletPickerOpen(false);
+        return resolved;
+      } catch (err) {
+        console.error("Login failed:", err);
+        throw err;
+      } finally {
+        setIsConnecting(false);
+      }
+    },
+    [client],
+  );
 
   const logout = useCallback(async () => {
-    try { await client.logout(); } catch {}
+    try {
+      await client.logout();
+    } catch {}
     clearToken();
     client.token = null;
     setIdentity(null);
@@ -66,34 +103,67 @@ export const SolLoginProvider = ({ client, children }) => {
   const requestProof = useCallback((req) => setZkProofRequest(req), []);
   const closeProof = useCallback(() => setZkProofRequest(null), []);
 
-  const completeProof = useCallback(async (proofMeta) => {
-    try {
-      const result = await client.verifyProof({
-        type: proofMeta.type,
-        threshold: proofMeta.threshold ?? null,
-        proof: null,
-        publicSignals: null,
-      });
-      setIdentity(prev => {
-        if (!prev) return prev;
-        return { ...prev, credentials: [...prev.credentials, result.credential] };
-      });
-      return result;
-    } catch (err) {
-      console.error("Proof verification failed:", err);
-      throw err;
-    }
-  }, [client]);
+  const completeProof = useCallback(
+    async (proofMeta) => {
+      try {
+        const result = await client.verifyProof({
+          type: proofMeta.type,
+          threshold: proofMeta.threshold ?? null,
+          proof: null,
+          publicSignals: null,
+        });
+        setIdentity((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            credentials: [...prev.credentials, result.credential],
+          };
+        });
+        return result;
+      } catch (err) {
+        console.error("Proof verification failed:", err);
+        throw err;
+      }
+    },
+    [client],
+  );
 
-  const value = useMemo(() => ({
-    client, identity, isConnecting, walletPickerOpen, zkProofRequest,
-    openWalletPicker, closeWalletPicker, login, logout,
-    requestProof, closeProof, completeProof,
-  }), [client, identity, isConnecting, walletPickerOpen, zkProofRequest,
-    openWalletPicker, closeWalletPicker, login, logout,
-    requestProof, closeProof, completeProof]);
+  const value = useMemo(
+    () => ({
+      client,
+      identity,
+      isConnecting,
+      walletPickerOpen,
+      zkProofRequest,
+      openWalletPicker,
+      closeWalletPicker,
+      login,
+      logout,
+      requestProof,
+      closeProof,
+      completeProof,
+    }),
+    [
+      client,
+      identity,
+      isConnecting,
+      walletPickerOpen,
+      zkProofRequest,
+      openWalletPicker,
+      closeWalletPicker,
+      login,
+      logout,
+      requestProof,
+      closeProof,
+      completeProof,
+    ],
+  );
 
-  return <SolLoginContext.Provider value={value}>{children}</SolLoginContext.Provider>;
+  return (
+    <SolLoginContext.Provider value={value}>
+      {children}
+    </SolLoginContext.Provider>
+  );
 };
 
 export const useSolLogin = () => {

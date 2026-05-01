@@ -8,7 +8,10 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useCallback, useRef } from "react";
 
 const SolLoginButton = ({
-  size = "md", full = false, redirectOnLogin = false, label = "Sign in with .sol"
+  size = "md",
+  full = false,
+  redirectOnLogin = false,
+  label = "Sign in with .sol",
 }) => {
   const { identity, login, isConnecting } = useSolLogin();
   const { publicKey, signMessage, connected } = useWallet();
@@ -20,14 +23,18 @@ const SolLoginButton = ({
   const loginInProgress = useRef(false);
 
   const handleLoginFlow = useCallback(async () => {
-    if (!connected || !publicKey || !signMessage || identity || isConnecting) return;
+    if (!connected || !publicKey || !signMessage || identity || isConnecting)
+      return;
     if (loginInProgress.current) return;
     loginInProgress.current = true;
     try {
       const id = await login(publicKey.toBase58(), signMessage);
-      toast.success(`Welcome, ${id.domain || publicKey.toBase58().slice(0, 6)}`, {
-        description: "Identity resolved via SNS Protocol",
-      });
+      toast.success(
+        `Welcome, ${id.domain || publicKey.toBase58().slice(0, 6)}`,
+        {
+          description: "Identity resolved via SNS Protocol",
+        },
+      );
       if (redirectOnLogin) navigate("/dashboard");
     } catch (err) {
       if (err.message?.includes("User rejected")) {
@@ -38,7 +45,16 @@ const SolLoginButton = ({
     } finally {
       loginInProgress.current = false;
     }
-  }, [connected, publicKey, signMessage, identity, isConnecting, login, navigate, redirectOnLogin]);
+  }, [
+    connected,
+    publicKey,
+    signMessage,
+    identity,
+    isConnecting,
+    login,
+    navigate,
+    redirectOnLogin,
+  ]);
 
   const handleClick = () => {
     if (identity) return;
@@ -51,11 +67,28 @@ const SolLoginButton = ({
   };
 
   useEffect(() => {
-    if (connected && publicKey && signMessage && !identity && !isConnecting && !hasAttemptedLogin && isLoginIntended) {
+    if (
+      connected &&
+      publicKey &&
+      signMessage &&
+      !identity &&
+      !isConnecting &&
+      !hasAttemptedLogin &&
+      isLoginIntended
+    ) {
       setHasAttemptedLogin(true);
       handleLoginFlow();
     }
-  }, [connected, publicKey, signMessage, identity, isConnecting, hasAttemptedLogin, isLoginIntended, handleLoginFlow]);
+  }, [
+    connected,
+    publicKey,
+    signMessage,
+    identity,
+    isConnecting,
+    hasAttemptedLogin,
+    isLoginIntended,
+    handleLoginFlow,
+  ]);
 
   useEffect(() => {
     if (!connected) {
@@ -65,7 +98,12 @@ const SolLoginButton = ({
     }
   }, [connected]);
 
-  const padding = size === "sm" ? "px-4 py-2 text-sm" : size === "lg" ? "px-7 py-4 text-base" : "px-5 py-2.5 text-sm";
+  const padding =
+    size === "sm"
+      ? "px-4 py-2 text-sm"
+      : size === "lg"
+        ? "px-7 py-4 text-base"
+        : "px-5 py-2.5 text-sm";
 
   return (
     <motion.button
@@ -82,7 +120,10 @@ const SolLoginButton = ({
         <Sparkles size={size === "lg" ? 18 : 15} className="text-sol-purple" />
         {isConnecting ? "Resolving identity…" : label}
         {!isConnecting && (
-          <ArrowRight size={size === "lg" ? 18 : 15} className="transition-transform group-hover:translate-x-1" />
+          <ArrowRight
+            size={size === "lg" ? 18 : 15}
+            className="transition-transform group-hover:translate-x-1"
+          />
         )}
       </span>
     </motion.button>

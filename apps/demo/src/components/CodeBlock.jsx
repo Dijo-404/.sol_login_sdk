@@ -9,7 +9,8 @@ const CodeBlock = ({ code, language = "tsx", filename, accent = "purple" }) => {
     setTimeout(() => setCopied(false), 1600);
   };
 
-  const accentColor = accent === "teal" ? "#14F195" : accent === "accent" ? "#00C2FF" : "#9945FF";
+  const accentColor =
+    accent === "teal" ? "#14F195" : accent === "accent" ? "#00C2FF" : "#9945FF";
 
   return (
     <div
@@ -22,7 +23,9 @@ const CodeBlock = ({ code, language = "tsx", filename, accent = "purple" }) => {
           <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
           <span className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
           {filename && (
-            <span className="ml-3 text-[11px] font-mono text-slate-500">{filename}</span>
+            <span className="ml-3 text-[11px] font-mono text-slate-500">
+              {filename}
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -38,7 +41,11 @@ const CodeBlock = ({ code, language = "tsx", filename, accent = "purple" }) => {
             data-testid="code-copy-button"
             aria-label="Copy"
           >
-            {copied ? <Check size={12} className="text-sol-teal" /> : <Copy size={12} />}
+            {copied ? (
+              <Check size={12} className="text-sol-teal" />
+            ) : (
+              <Copy size={12} />
+            )}
           </button>
         </div>
       </div>

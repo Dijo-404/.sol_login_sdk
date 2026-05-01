@@ -1,18 +1,27 @@
 const STORAGE_KEY = "sol_login_token";
 
 export function getStoredToken() {
-  try { return localStorage.getItem(STORAGE_KEY); }
-  catch { return null; }
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function storeToken(token) {
-  try { localStorage.setItem(STORAGE_KEY, token); }
-  catch {}
+  try {
+    localStorage.setItem(STORAGE_KEY, token);
+  } catch {
+    // Ignore
+  }
 }
 
 export function clearToken() {
-  try { localStorage.removeItem(STORAGE_KEY); }
-  catch {}
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Ignore
+  }
 }
 
 export function decodeTokenPayload(token) {

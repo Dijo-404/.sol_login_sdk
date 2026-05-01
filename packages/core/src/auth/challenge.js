@@ -1,4 +1,9 @@
-export function buildChallengeMessage({ walletAddress, domain, nonce, appName = ".sol Login" }) {
+export function buildChallengeMessage({
+  walletAddress,
+  domain,
+  nonce,
+  appName = ".sol Login",
+}) {
   const shortWallet = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
   const now = new Date().toISOString();
   return [
@@ -10,7 +15,9 @@ export function buildChallengeMessage({ walletAddress, domain, nonce, appName = 
     `Issued At: ${now}`,
     "",
     "This request will not trigger any blockchain transaction or cost any fees.",
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export function encodeMessage(message) {
