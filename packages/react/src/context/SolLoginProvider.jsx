@@ -40,8 +40,19 @@ export const SolLoginProvider = ({ client, children }) => {
       const signature = await signMessage(messageBytes);
 
       // 3. Encode signature as base58
-      const { encode } = await import("bs58");
-      const sigBase58 = encode(signature);
+      const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+      const sigBase58 = ((bytes) => {
+        const digits = [0];
+        for (const byte of bytes) {
+          let carry = byte;
+          for (let j = 0; j < digits.length; j++) { carry += digits[j] << 8; digits[j] = carry % 58; carry = (carry / 58) | 0; }
+          while (carry > 0) { digits.push(carry % 58); carry = (carry / 58) | 0; }
+        }
+        let str = "";
+        for (let i = 0; i < bytes.length && bytes[i] === 0; i++) str += ALPHABET[0];
+        for (let i = digits.length - 1; i >= 0; i--) str += ALPHABET[digits[i]];
+        return str;
+      })(signature);
 
       // 4. Verify with backend → get JWT + identity
       const { token, identity: resolved } = await client.verify(walletAddress, sigBase58);
@@ -71,7 +82,12 @@ export const SolLoginProvider = ({ client, children }) => {
 
   const completeProof = useCallback(async (proofMeta) => {
     try {
-      const result = await client.verifyProof(null, null, proofMeta.type);
+      const result = await client.verifyProof({
+        type: proofMeta.type,
+        threshold: proofMeta.threshold ?? null,
+        proof: null,
+        publicSignals: null,
+      });
       setIdentity(prev => {
         if (!prev) return prev;
         return {

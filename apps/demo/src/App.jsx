@@ -1,10 +1,9 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { PhantomWalletAdapter, SolflareWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { SolLoginProvider } from "@sol-login/react";
 import { SolLoginClient } from "@sol-login/core";
 import SmoothScroll from "@/lib/SmoothScroll";
@@ -23,10 +22,26 @@ const SOLANA_NETWORK = import.meta.env.VITE_SOLANA_NETWORK || "devnet";
 const RPC_ENDPOINT = import.meta.env.VITE_SOLANA_RPC || "https://api.devnet.solana.com";
 
 function App() {
-  const wallets = useMemo(() => [
-    new PhantomWalletAdapter(),
-    new SolflareWalletAdapter(),
-  ], []);
+  // Register MetaMask Snap for Solana via Solflare's wallet-standard adapter.
+  // This runs once and adds MetaMask as a selectable Solana wallet.
+  useEffect(() => {
+    import("@solflare-wallet/metamask-wallet-standard").then((mod) => {
+      if (typeof mod.registerWallet === "function") {
+        mod.registerWallet();
+      } else if (typeof mod.default === "function") {
+        mod.default();
+      }
+    }).catch(() => {
+      // MetaMask Snap registration is best-effort — no-op on failure
+    });
+  }, []);
+
+  // Empty array = rely on Wallet Standard auto-detection.
+  // Modern wallets (Phantom, Solflare, Backpack, MetaMask Snap) register
+  // themselves via the Wallet Standard and are detected automatically.
+  // Passing legacy adapters (e.g. PhantomWalletAdapter) causes duplicates
+  // and can break connection flow.
+  const wallets = useMemo(() => [], []);
 
   const solLoginClient = useMemo(() => new SolLoginClient({
     apiUrl: API_URL,

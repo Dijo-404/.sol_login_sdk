@@ -5,38 +5,68 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 const SolLoginButton = ({
   size = "md", full = false, redirectOnLogin = false, label = "Sign in with .sol"
 }) => {
   const { identity, login, isConnecting } = useSolLogin();
-  const { publicKey, signMessage, connected } = useWallet();
+  const { publicKey, signMessage, connected, wallet } = useWallet();
   const { setVisible } = useWalletModal();
   const navigate = useNavigate();
 
+  const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);
+  const [isLoginIntended, setIsLoginIntended] = useState(false);
+  const loginInProgress = useRef(false);
+
+  const handleLoginFlow = useCallback(async () => {
+    if (!connected || !publicKey || !signMessage || identity || isConnecting) return;
+    if (loginInProgress.current) return;
+    loginInProgress.current = true;
+    try {
+      const id = await login(publicKey.toBase58(), signMessage);
+      toast.success(`Welcome, ${id.domain || publicKey.toBase58().slice(0, 6)}`, {
+        description: "Identity resolved via SNS Protocol",
+      });
+      if (redirectOnLogin) navigate("/dashboard");
+    } catch (err) {
+      if (err.message?.includes("User rejected")) {
+        toast.info("Signature request cancelled");
+      } else {
+        toast.error("Login failed", { description: err.message });
+      }
+    } finally {
+      loginInProgress.current = false;
+    }
+  }, [connected, publicKey, signMessage, identity, isConnecting, login, navigate, redirectOnLogin]);
+
   const handleClick = () => {
     if (identity) return;
-    // Open the Solana wallet adapter modal to connect
-    setVisible(true);
+    if (connected && publicKey && signMessage) {
+      handleLoginFlow();
+    } else {
+      setIsLoginIntended(true);
+      // Open the Solana wallet adapter modal to connect
+      setVisible(true);
+    }
   };
 
-  // When wallet connects, trigger the SDK login flow
+  // When wallet connects for the first time after clicking, trigger the SDK login flow
   useEffect(() => {
-    if (connected && publicKey && signMessage && !identity && !isConnecting) {
-      (async () => {
-        try {
-          const id = await login(publicKey.toBase58(), signMessage);
-          toast.success(`Welcome, ${id.domain || publicKey.toBase58().slice(0, 6)}`, {
-            description: "Identity resolved via SNS Protocol",
-          });
-          if (redirectOnLogin) navigate("/dashboard");
-        } catch (err) {
-          toast.error("Login failed", { description: err.message });
-        }
-      })();
+    if (connected && publicKey && signMessage && !identity && !isConnecting && !hasAttemptedLogin && isLoginIntended) {
+      setHasAttemptedLogin(true);
+      handleLoginFlow();
     }
-  }, [connected, publicKey, signMessage, identity, isConnecting]);
+  }, [connected, publicKey, signMessage, identity, isConnecting, hasAttemptedLogin, isLoginIntended, handleLoginFlow]);
+
+  // Reset attempt flag when wallet disconnects
+  useEffect(() => {
+    if (!connected) {
+      setHasAttemptedLogin(false);
+      setIsLoginIntended(false);
+      loginInProgress.current = false;
+    }
+  }, [connected]);
 
   const padding = size === "sm" ? "px-4 py-2 text-sm" : size === "lg" ? "px-7 py-4 text-base" : "px-5 py-2.5 text-sm";
 

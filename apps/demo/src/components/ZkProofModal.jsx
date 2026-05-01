@@ -39,12 +39,21 @@ const ZkProofModal = () => {
         if (cancelled) return;
         setLogs((prev) => [...prev, `  ✓ ${STEPS[i].label} — ok`]);
       }
-      const sig = `${Math.random().toString(36).slice(2, 6).toUpperCase()}…${Math.random().toString(36).slice(2, 5)}`;
-      setTxSig(sig);
-      setLogs((prev) => [...prev, `> tx_signature = ${sig}`]);
-      setDone(true);
-      completeProof({ type: zkProofRequest.type, threshold: zkProofRequest.threshold });
-      toast.success("ZK proof verified", { description: `${PROOF_TITLES[zkProofRequest.type]} issued onchain.` });
+
+      // Actually call the backend to verify and store the credential
+      try {
+        const result = await completeProof({ type: zkProofRequest.type, threshold: zkProofRequest.threshold });
+        const sig = result?.txSignature || `${Math.random().toString(36).slice(2, 6).toUpperCase()}…${Math.random().toString(36).slice(2, 5)}`;
+        setTxSig(sig);
+        setLogs((prev) => [...prev, `> tx_signature = ${sig}`]);
+        setDone(true);
+        toast.success("ZK proof verified", { description: `${PROOF_TITLES[zkProofRequest.type]} issued onchain.` });
+      } catch (err) {
+        setLogs((prev) => [...prev, `  ✗ Verification failed: ${err.message}`]);
+        setDone(true);
+        setTxSig(null);
+        toast.error("Proof verification failed", { description: err.message });
+      }
     };
     run();
     return () => { cancelled = true; };

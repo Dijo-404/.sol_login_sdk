@@ -139,7 +139,7 @@ const Dashboard = () => {
                           <div className="w-8 h-8 rounded-lg bg-sol-teal/10 border border-sol-teal/30 flex items-center justify-center text-sol-teal"><Shield size={13} /></div>
                           <div>
                             <div className="text-sm text-white">{meta?.label || c.type}</div>
-                            <div className="font-mono text-[11px] text-slate-500">tx: {c.txSig} · {new Date(c.verifiedAt * 1000).toLocaleDateString()}</div>
+                            <div className="font-mono text-[11px] text-slate-500">tx: {c.txSignature} · {new Date(c.verifiedAt * 1000).toLocaleDateString()}</div>
                           </div>
                         </div>
                         {c.threshold && <span className="font-mono text-xs text-sol-teal">≥ {c.threshold}</span>}

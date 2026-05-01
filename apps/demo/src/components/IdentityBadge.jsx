@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useSolLogin } from "@sol-login/react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { LogOut, ChevronDown, User, Layers } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 
 const IdentityBadge = ({ identity }) => {
   const { logout } = useSolLogin();
+  const { disconnect } = useWallet();
   const navigate = useNavigate();
   const handle = identity.domain ?? `${identity.wallet.slice(0, 4)}…${identity.wallet.slice(-4)}`;
 
@@ -43,7 +45,7 @@ const IdentityBadge = ({ identity }) => {
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator className="bg-white/5" />
-        <DropdownMenuItem onClick={() => { logout(); toast("Session ended"); navigate("/"); }} className="text-slate-300 focus:text-white focus:bg-white/[0.06] cursor-pointer" data-testid="identity-menu-logout">
+        <DropdownMenuItem onClick={() => { logout(); disconnect().catch(() => {}); toast("Session ended"); navigate("/"); }} className="text-slate-300 focus:text-white focus:bg-white/[0.06] cursor-pointer" data-testid="identity-menu-logout">
           <LogOut size={14} className="mr-2" /> Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

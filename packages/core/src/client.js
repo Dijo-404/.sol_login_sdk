@@ -96,15 +96,22 @@ export class SolLoginClient {
   // --- ZK Proofs ---
 
   /** Submit a proof for on-chain verification */
-  async verifyProof(proof, publicSignals, type) {
+  async verifyProof({ type, threshold, proof, publicSignals }) {
     return this._fetch("/proof/verify", {
       method: "POST",
-      body: JSON.stringify({ proof, publicSignals, type }),
+      body: JSON.stringify({ type, threshold, proof, publicSignals }),
     });
   }
 
   /** Get all verified credentials for a wallet */
   async getCredentials(wallet) {
     return this._fetch(`/proof/${wallet}/credentials`);
+  }
+
+  // --- Explore ---
+
+  /** Get all known identities for the explore leaderboard */
+  async getLeaderboard() {
+    return this._fetch("/identity/explore/leaderboard");
   }
 }

@@ -3,35 +3,29 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSolLogin } from "@sol-login/react";
 import ReputationMeter from "@/components/ReputationMeter";
-import { TrendingUp, Loader2 } from "lucide-react";
+import { TrendingUp, Loader2, Users } from "lucide-react";
 
 const Explore = () => {
-  const { client } = useSolLogin();
+  const { client, identity: currentUser } = useSolLogin();
   const [identities, setIdentities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
-  // Fetch identities from backend — in production this would be a paginated endpoint
-  // For hackathon: we resolve a set of well-known .sol domains
+  // Fetch identities from the backend leaderboard endpoint
   useEffect(() => {
-    const DEMO_DOMAINS = ["toly.sol", "bonfida.sol", "mango.sol", "jupiter.sol", "tensor.sol"];
-    const fetchAll = async () => {
+    const fetchLeaderboard = async () => {
       setLoading(true);
-      const results = [];
-      await Promise.allSettled(
-        DEMO_DOMAINS.map(async (domain) => {
-          try {
-            const identity = await client.resolveIdentity(domain);
-            if (identity) results.push(identity);
-          } catch {}
-        })
-      );
-      results.sort((a, b) => (b.reputation?.total || 0) - (a.reputation?.total || 0));
-      setIdentities(results);
+      try {
+        const data = await client.getLeaderboard();
+        setIdentities(data.identities || []);
+      } catch (err) {
+        console.error("Leaderboard fetch failed:", err);
+        setIdentities([]);
+      }
       setLoading(false);
     };
-    fetchAll();
-  }, [client]);
+    fetchLeaderboard();
+  }, [client, currentUser]); // Re-fetch when user logs in (new identity may appear)
 
   const tiers = [
     { id: "all", label: "All" },
@@ -67,11 +61,24 @@ const Explore = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-4">
             <Loader2 className="w-8 h-8 text-sol-purple animate-spin" />
-            <p className="mono-label text-slate-400">Resolving identities from SNS…</p>
+            <p className="mono-label text-slate-400">Loading leaderboard…</p>
           </div>
         ) : result.length === 0 ? (
-          <div className="text-center py-32">
-            <p className="mono-label text-slate-400">No identities found for this filter.</p>
+          <div className="text-center py-32" data-testid="explore-empty">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/10 mb-6">
+              <Users size={28} className="text-slate-500" />
+            </div>
+            <h3 className="font-display text-xl font-medium text-white mb-2">No identities yet</h3>
+            <p className="text-slate-400 max-w-sm mx-auto">
+              {filter !== "all"
+                ? "No identities match this filter. Try selecting \"All\"."
+                : "Sign in with your wallet to be the first on the leaderboard!"}
+            </p>
+            {!currentUser && filter === "all" && (
+              <Link to="/" className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm text-white border border-white/10 hover:border-white/30 hover:bg-white/[0.04] transition">
+                Go sign in →
+              </Link>
+            )}
           </div>
         ) : (
           <>
@@ -94,7 +101,7 @@ const Explore = () => {
                         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sol-purple to-sol-teal ring-1 ring-white/10" />
                       )}
                       <div>
-                        <div className="font-display text-lg font-medium tracking-tight">{id.domain || "—"}</div>
+                        <div className="font-display text-lg font-medium tracking-tight">{id.domain || `${id.wallet.slice(0, 6)}…${id.wallet.slice(-4)}`}</div>
                         <div className="text-[11px] font-mono text-slate-500">{id.wallet.slice(0, 4)}…{id.wallet.slice(-4)}</div>
                       </div>
                     </div>
@@ -117,7 +124,7 @@ const Explore = () => {
                       <div className="md:col-span-1 font-mono text-sm text-slate-500 group-hover:text-white">{String(i + 1).padStart(2, "0")}</div>
                       <div className="md:col-span-4 flex items-center gap-3">
                         {id.avatar ? <img src={id.avatar} alt="" className="w-9 h-9 rounded-lg object-cover" /> : <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-sol-purple to-sol-teal" />}
-                        <div><div className="text-sm font-medium text-white">{id.domain || "—"}</div><div className="text-[11px] font-mono text-slate-500">{id.wallet.slice(0, 4)}…{id.wallet.slice(-4)}</div></div>
+                        <div><div className="text-sm font-medium text-white">{id.domain || `${id.wallet.slice(0, 6)}…${id.wallet.slice(-4)}`}</div><div className="text-[11px] font-mono text-slate-500">{id.wallet.slice(0, 4)}…{id.wallet.slice(-4)}</div></div>
                       </div>
                       <div className="md:col-span-2 flex items-center gap-2">
                         <span className="font-mono text-base text-white">{id.reputation?.total || 0}</span><span className="text-[10px] font-mono text-slate-500">/1000</span>

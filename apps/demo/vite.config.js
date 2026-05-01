@@ -10,4 +10,18 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  define: {
+    // Polyfill for wallet-adapter and @solana/web3.js in browser
+    'process.env': {},
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    // Pre-bundle these to avoid CJS interop issues
+    include: [
+      '@solana/wallet-adapter-react',
+      '@solana/wallet-adapter-react-ui',
+      '@solana/wallet-adapter-base',
+      '@solana/web3.js',
+    ],
+  },
 })
