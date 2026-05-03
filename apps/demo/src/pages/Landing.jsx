@@ -28,7 +28,6 @@ function Page() {
 const Landing = () => {
   return (
     <>
-      {/* HERO */}
       <section
         className="relative min-h-[100vh] flex items-center overflow-hidden"
         data-testid="landing-hero"
@@ -123,7 +122,6 @@ const Landing = () => {
           </div>
         </div>
 
-        {/* Scroll cue */}
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ repeat: Infinity, duration: 2.4, ease: "easeInOut" }}
@@ -134,7 +132,6 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* INTEGRATIONS */}
       <section
         className="relative py-16 border-y border-white/5"
         data-testid="integrations-strip"
@@ -163,11 +160,10 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* FEATURES */}
       <section className="relative py-28" data-testid="features-section">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="max-w-2xl mb-14">
-            <div className="mono-label mb-3">What's in the box</div>
+            <div className="mono-label mb-3">What&apos;s in the box</div>
             <h2 className="font-display text-4xl md:text-5xl tracking-tight font-medium">
               An entire identity stack,{" "}
               <span className="text-gradient-sol">three lines</span> to install.
@@ -187,7 +183,6 @@ const Landing = () => {
 
       <HowItWorks />
 
-      {/* QUICKSTART */}
       <section className="relative py-28" data-testid="quickstart-section">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -249,7 +244,6 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="relative py-28" data-testid="cta-section">
         <div className="max-w-5xl mx-auto px-6 md:px-12">
           <div className="relative glass-card noise overflow-hidden">

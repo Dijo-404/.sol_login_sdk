@@ -12,7 +12,6 @@ router.post("/verify", authenticate, async (req, res) => {
 
     if (!type) return res.status(400).json({ error: "proof type required" });
 
-    // Simulate Groth16 verification delay
     await new Promise((r) => setTimeout(r, 500));
 
     const txSig = `${crypto.randomBytes(32).toString("base64url").slice(0, 44)}`;

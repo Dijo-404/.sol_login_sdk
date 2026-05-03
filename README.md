@@ -10,9 +10,8 @@ An open-source identity primitive that replaces raw wallet connection with a hum
 
 ## Table of Contents
 
-- [Architecture](#architecture)
-- [Authentication Flow](#authentication-flow)
-- [ZK Proof Pipeline](#zk-proof-pipeline)
+- [Architecture](./docs/architecture.md)
+- [Workflows](./docs/workflows.md)
 - [Monorepo Structure](#monorepo-structure)
 - [Quickstart](#quickstart)
 - [SDK Packages](#sdk-packages)
@@ -26,103 +25,13 @@ An open-source identity primitive that replaces raw wallet connection with a hum
 
 ## Architecture
 
-```mermaid
-graph TB
-    subgraph Client["Client (Browser)"]
-        App["dApp / Demo Frontend"]
-        ReactSDK["@sol-login/react"]
-        ZKGen["ZK Proof Generator<br/>snarkjs + WASM"]
-        App --> ReactSDK
-        ReactSDK --> ZKGen
-    end
-
-    subgraph Backend["Backend (Node.js / Express)"]
-        Auth["Auth API<br/>/auth/*"]
-        Identity["Identity Resolver<br/>/identity/*"]
-        Reputation["Reputation Engine<br/>/reputation/*"]
-        Proof["Proof Verifier<br/>/proof/*"]
-    end
-
-    subgraph Infra["Infrastructure"]
-        SQLite["SQLite<br/>Sessions + Cache"]
-        Solana["Solana RPC<br/>SNS + ZK Program"]
-    end
-
-    ReactSDK -- "REST API" --> Auth
-    ReactSDK -- "REST API" --> Identity
-    ReactSDK -- "REST API" --> Reputation
-    ZKGen -- "Proof bytes" --> Proof
-
-    Auth --> SQLite
-    Auth --> Solana
-    Identity --> Solana
-    Reputation --> Solana
-    Reputation --> SQLite
-    Proof --> SQLite
-    Proof --> Solana
-```
+See [Architecture Documentation](./docs/architecture.md) for detailed diagrams and component breakdowns.
 
 ---
 
-## Authentication Flow
+## Authentication and Workflows
 
-```mermaid
-sequenceDiagram
-    participant W as Wallet
-    participant C as Client SDK
-    participant B as Backend API
-    participant S as Solana RPC
-
-    C->>B: POST /auth/challenge { walletAddress }
-    B-->>C: { nonce, message }
-    C->>W: Sign message (Ed25519)
-    W-->>C: signature
-    C->>B: POST /auth/verify { walletAddress, signature }
-    B->>B: Verify Ed25519 signature
-    B->>S: Resolve .sol domain via SNS
-    S-->>B: Owner pubkey + records
-    B->>S: Compute reputation from on-chain data
-    S-->>B: Transaction history, balances
-    B->>B: Build SolIdentity object
-    B->>B: Issue JWT session
-    B-->>C: { token, identity }
-    C->>C: Store token, render identity
-```
-
-The challenge message is a human-readable string that includes the wallet address, a server-generated nonce, and a timestamp. No blockchain transaction is broadcast during sign-in.
-
----
-
-## ZK Proof Pipeline
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant C as Client (Browser)
-    participant B as Backend
-    participant S as Solana Program
-
-    U->>C: Request proof (type, threshold)
-    C->>C: Load Groth16 circuit (WASM)
-    C->>C: Generate witness from private inputs
-    C->>C: Compute zk-SNARK proof
-    C->>B: POST /proof/verify { proof, publicSignals, type }
-    B->>B: Validate proof structure
-    B->>S: Call Anchor verifier program
-    S-->>B: Verification result
-    B->>B: Store verified credential
-    B-->>C: { verified, txSignature, credential }
-    C->>C: Update identity with new credential
-```
-
-Four circuit types are supported:
-
-| Circuit                | Private Inputs         | Public Inputs           | Purpose                          |
-| ---------------------- | ---------------------- | ----------------------- | -------------------------------- |
-| `reputation_threshold` | score, salt            | threshold, commitment   | Prove score exceeds threshold    |
-| `wallet_age`           | firstTxTimestamp, salt | minAge, commitment, now | Prove wallet age exceeds minimum |
-| `sybil_nullifier`      | domainHash, secret     | nullifier, appId        | Per-app unique human proof       |
-| `social_ownership`     | handle, secret         | commitment              | Prove social account ownership   |
+See [Workflows Documentation](./docs/workflows.md) for detailed sequence diagrams of the authentication flow and ZK proof pipeline.
 
 ---
 

@@ -58,11 +58,12 @@ const PublicProfile = () => {
         <div className="text-center max-w-md">
           <div className="mono-label mb-3">404</div>
           <h2 className="font-display text-3xl md:text-4xl font-medium tracking-tight">
-            <span className="text-gradient-sol">{name}</span> isn't registered.
+            <span className="text-gradient-sol">{name}</span> isn&apos;t
+            registered.
           </h2>
           <p className="mt-4 text-slate-400">
-            This .sol domain hasn't been claimed via SNS — or isn't registered
-            on {client.network}.
+            This .sol domain hasn&apos;t been claimed via SNS — or isn&apos;t
+            registered on {client.network}.
           </p>
           <Link
             to="/explore"

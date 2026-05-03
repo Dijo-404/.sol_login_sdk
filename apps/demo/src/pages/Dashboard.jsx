@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useSolLogin } from "@sol-login/react";
 import IdentityCard from "@/components/IdentityCard";
 import ReputationMeter from "@/components/ReputationMeter";
@@ -66,7 +66,6 @@ const ProofCTA = ({ type, threshold, label, available, identity }) => {
 
 const Dashboard = () => {
   const { identity } = useSolLogin();
-  const navigate = useNavigate();
   const [privacy, setPrivacy] = useState({
     showReputation: true,
     showSocials: true,

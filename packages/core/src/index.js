@@ -1,4 +1,3 @@
-// @sol-login/core — Public API
 export { SolLoginClient } from "./client.js";
 export { buildChallengeMessage, encodeMessage } from "./auth/challenge.js";
 export {

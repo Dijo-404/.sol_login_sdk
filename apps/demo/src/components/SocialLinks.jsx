@@ -6,14 +6,8 @@ const ICONS = {
   discord: MessageCircle,
   farcaster: Globe,
 };
-const LABELS = {
-  twitter: "Twitter / X",
-  github: "GitHub",
-  discord: "Discord",
-  farcaster: "Farcaster",
-};
 
-const SocialLinks = ({ socials = {}, compact = false }) => {
+const SocialLinks = ({ socials = {} }) => {
   const entries = Object.entries(socials).filter(([, v]) => v);
   if (entries.length === 0) {
     return (

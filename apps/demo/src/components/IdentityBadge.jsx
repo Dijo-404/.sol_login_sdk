@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { useSolLogin } from "@sol-login/react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { LogOut, ChevronDown, User, Layers } from "lucide-react";

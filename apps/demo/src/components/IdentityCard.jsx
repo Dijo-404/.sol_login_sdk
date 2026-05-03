@@ -22,7 +22,6 @@ const IdentityCard = ({ identity, compact = false }) => {
       className="relative glass-card noise overflow-hidden"
       data-testid="identity-card"
     >
-      {/* gradient sheen */}
       <div className="absolute -top-32 -right-32 w-72 h-72 rounded-full bg-sol-purple/15 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full bg-sol-teal/15 blur-3xl pointer-events-none" />
 

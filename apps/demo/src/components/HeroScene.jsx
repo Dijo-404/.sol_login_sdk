@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unknown-property */
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Float,
@@ -19,7 +20,6 @@ const IdentityCard = () => {
   return (
     <Float speed={1.4} rotationIntensity={0.4} floatIntensity={1.1}>
       <group ref={ref}>
-        {/* Card body */}
         <mesh castShadow receiveShadow>
           <boxGeometry args={[3.2, 2, 0.08]} />
           <meshPhysicalMaterial
@@ -31,17 +31,14 @@ const IdentityCard = () => {
             reflectivity={0.9}
           />
         </mesh>
-        {/* Front purple glow strip */}
         <mesh position={[0, 0.55, 0.045]}>
           <boxGeometry args={[2.9, 0.14, 0.01]} />
           <meshBasicMaterial color="#9945FF" toneMapped={false} />
         </mesh>
-        {/* Front teal accent */}
         <mesh position={[-1.2, -0.55, 0.045]}>
           <circleGeometry args={[0.3, 32]} />
           <meshBasicMaterial color="#14F195" toneMapped={false} />
         </mesh>
-        {/* small chip */}
         <mesh position={[1.05, -0.55, 0.05]}>
           <boxGeometry args={[0.5, 0.32, 0.02]} />
           <meshStandardMaterial
@@ -50,7 +47,6 @@ const IdentityCard = () => {
             roughness={0.2}
           />
         </mesh>
-        {/* edge glow purple */}
         <mesh position={[1.6, 0, 0]}>
           <boxGeometry args={[0.02, 2, 0.1]} />
           <meshBasicMaterial color="#9945FF" toneMapped={false} />
@@ -258,7 +254,6 @@ const HeroScene = () => {
           <Scene />
         </Suspense>
       </Canvas>
-      {/* Vignette overlay */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(2,4,10,0.8)_100%)]" />
     </div>
   );

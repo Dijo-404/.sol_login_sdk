@@ -7,7 +7,6 @@ import {
   useEffect,
 } from "react";
 import {
-  SolLoginClient,
   storeToken,
   getStoredToken,
   clearToken,
@@ -43,7 +42,7 @@ export const SolLoginProvider = ({ client, children }) => {
     async (walletAddress, signMessage) => {
       setIsConnecting(true);
       try {
-        const { nonce, message } = await client.getChallenge(walletAddress);
+        const { message } = await client.getChallenge(walletAddress);
 
         const messageBytes = new TextEncoder().encode(message);
         const signature = await signMessage(messageBytes);
@@ -94,7 +93,9 @@ export const SolLoginProvider = ({ client, children }) => {
   const logout = useCallback(async () => {
     try {
       await client.logout();
-    } catch {}
+    } catch (_) {
+      /* logout is best-effort */
+    }
     clearToken();
     client.token = null;
     setIdentity(null);

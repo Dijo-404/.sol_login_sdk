@@ -11,12 +11,9 @@ const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
-// Health check
 app.get("/health", (_, res) =>
   res.json({ status: "ok", network: config.solanaNetwork }),
 );
-
-// API routes
 app.use("/auth", authRoutes);
 app.use("/identity", identityRoutes);
 app.use("/reputation", reputationRoutes);
