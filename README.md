@@ -40,15 +40,20 @@ See [Workflows Documentation](./docs/workflows.md) for detailed sequence diagram
 ```
 sol-login/
   apps/
-    demo/                   Vite + React demo app
-    backend/                Express.js API server
+    demo/                   Vite + React demo app (real snarkjs proof generation)
+    backend/                Express API — Postgres/Prisma, Helius, real Anchor submit
   packages/
     core/                   @sol-login/core (framework-agnostic)
     react/                  @sol-login/react (hooks + provider)
     express/                @sol-login/express (session middleware)
-    circuits/               Circom ZK circuits (Groth16)
+    circuits/               Circom ZK circuits + trusted-setup scripts
   programs/
-    sol-login/              Anchor smart contract (ZK verifier)
+    sol-login/              Anchor program (credential PDA store; off-chain verifier today)
+  docs/
+    architecture.md         Component diagram + responsibilities
+    workflows.md            Auth + proof sequence diagrams
+    deployment.md           End-to-end deploy (Postgres, Vercel, Railway, Helius)
+    anchor-deploy.md        Program keypair, build, deploy, issuer wallet
 ```
 
 ---
@@ -59,6 +64,10 @@ sol-login/
 
 - Node.js 20+
 - pnpm 9+
+- Docker (for local Postgres) or a hosted Postgres URL
+- `circom` 2.x on `PATH` (only required when (re)generating ZK circuit artifacts)
+- A [Helius API key](https://www.helius.dev/) — required for reputation scoring
+- A deployed Anchor program on devnet/mainnet — see [docs/anchor-deploy.md](./docs/anchor-deploy.md)
 
 ### Install and Run
 
@@ -66,6 +75,19 @@ sol-login/
 git clone https://github.com/Dijo-404/.sol_login_sdk.git
 cd .sol_login_sdk
 pnpm install
+
+# Configure environments — fill out every variable
+cp apps/backend/.env.example apps/backend/.env
+cp apps/demo/.env.example apps/demo/.env
+
+# Provision Postgres + run migrations
+docker run -d --name sol-login-pg -p 5432:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=sol_login postgres:16
+pnpm --filter backend exec prisma migrate deploy
+
+# Compile circuits + trusted setup (one-time)
+pnpm --filter @sol-login/circuits run compile
+pnpm --filter @sol-login/circuits run setup
+
 pnpm dev:all
 ```
 
@@ -236,32 +258,34 @@ Outputs: `.wasm`, `.zkey`, `.vkey` files in `build/`.
 
 ## Configuration
 
-### Frontend (.env)
+Both apps fail fast if any required variable is missing — there are no insecure dev fallbacks. Copy the templates and fill them in:
 
-```
-VITE_API_URL=http://localhost:4000
-VITE_SOLANA_NETWORK=devnet
-VITE_SOLANA_RPC=https://api.devnet.solana.com
+```bash
+cp apps/backend/.env.example apps/backend/.env
+cp apps/demo/.env.example apps/demo/.env
 ```
 
-### Backend (.env)
-
-```
-PORT=4000
-SOLANA_RPC_URL=https://api.devnet.solana.com
-SOLANA_NETWORK=devnet
-JWT_SECRET=<random-256-bit-secret>
-JWT_EXPIRY=24h
-```
+The full list of required variables and how to generate each (JWT secret, Helius API key, Anchor program ID, issuer keypair, Postgres URL) lives in [apps/backend/.env.example](./apps/backend/.env.example) and [apps/demo/.env.example](./apps/demo/.env.example).
 
 ---
 
 ## Development
 
 ```bash
+# Start Postgres locally (required — there is no SQLite fallback)
+docker run -d --name sol-login-pg -p 5432:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=sol_login postgres:16
+
+# Apply database schema
+pnpm --filter backend exec prisma migrate deploy
+
+# Compile circuits + run trusted setup (one-time; requires `circom` on PATH)
+pnpm --filter @sol-login/circuits run compile
+pnpm --filter @sol-login/circuits run setup
+
+# Run the stack
+pnpm dev:all          # Frontend + backend in parallel
 pnpm dev              # Frontend only
 pnpm dev:backend      # Backend only
-pnpm dev:all          # Both in parallel
 pnpm build            # Production build all packages
 pnpm lint             # Lint all packages
 ```
@@ -281,39 +305,28 @@ Wallets are auto-detected at runtime. No legacy adapters are required.
 
 ## Deployment
 
-### Frontend (Vercel)
+See [docs/deployment.md](./docs/deployment.md) for the full step-by-step (Postgres provisioning, Anchor program deploy, ZK trusted setup, Vercel + Railway). The short version:
 
-```bash
-cd apps/demo && pnpm build
-```
-
-Set environment variables in Vercel dashboard.
-
-### Backend (Railway / Render)
-
-```bash
-cd apps/backend && node src/index.js
-```
-
-Required environment variables: `PORT`, `SOLANA_RPC_URL`, `JWT_SECRET`.
-
-The backend uses SQLite by default. For production, swap `better-sqlite3` for PostgreSQL via Prisma.
+- **Frontend** — Vercel, configured by [apps/demo/vercel.json](./apps/demo/vercel.json). Set `VITE_API_URL`, `VITE_SOLANA_NETWORK`, `VITE_SOLANA_RPC` in the project env.
+- **Backend** — Containerized via [apps/backend/Dockerfile](./apps/backend/Dockerfile); deploy to Railway, Render, Fly, or any Docker host. Requires a managed Postgres (`DATABASE_URL`) and all variables from `.env.example`.
+- **Anchor program** — Deploy once before the backend can issue real credentials. See [docs/anchor-deploy.md](./docs/anchor-deploy.md).
+- **CI/CD** — [.github/workflows/ci.yml](./.github/workflows/ci.yml) lints, builds, and runs a Postgres-backed health check. [.github/workflows/deploy.yml](./.github/workflows/deploy.yml) is a manual-dispatch deploy for Vercel + Railway.
 
 ---
 
 ## Reputation Scoring
 
-Scores range from 0 to 1000, computed from on-chain data:
+Scores range from 0 to 1000 and are computed from real protocol interactions via the [Helius enhanced transactions API](https://www.helius.dev/), with the wallet's first-tx timestamp used for domain age. No on-chain interaction with a program counts toward a factor unless that protocol's program ID is matched in the transaction.
 
-| Factor              | Weight | Source                                       |
-| ------------------- | ------ | -------------------------------------------- |
-| DeFi activity       | 30%    | Transaction count (Jupiter, Marinade, Drift) |
-| Governance          | 25%    | SOL balance proxy (Realms participation)     |
-| NFT activity        | 15%    | Transaction frequency (Tensor, Magic Eden)   |
-| Domain age          | 20%    | Time since first transaction                 |
-| Social verification | 10%    | Token account presence                       |
+| Factor              | Weight | Source                                                                  |
+| ------------------- | ------ | ----------------------------------------------------------------------- |
+| DeFi activity       | 30%    | Program-ID matches against Jupiter v6, Marinade, Drift v2 (log-scaled)  |
+| Governance          | 25%    | Program-ID matches against Realms (`GovER5...`), log-scaled             |
+| NFT activity        | 15%    | Program-ID matches against Tensor and Magic Eden v2 (log-scaled)        |
+| Domain age          | 20%    | Time since first signature (Helius, with `getSignaturesForAddress` fallback) |
+| Social verification | 10%    | Presence of an SNS social token account for the wallet                  |
 
-Scores are cached for 6 hours in SQLite with an option to force re-index.
+Scores are cached for 6 hours in `reputation_cache` (Postgres) with an authenticated refresh endpoint to force re-index.
 
 ---
 

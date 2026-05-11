@@ -105,26 +105,16 @@ export const SolLoginProvider = ({ client, children }) => {
   const closeProof = useCallback(() => setZkProofRequest(null), []);
 
   const completeProof = useCallback(
-    async (proofMeta) => {
-      try {
-        const result = await client.verifyProof({
-          type: proofMeta.type,
-          threshold: proofMeta.threshold ?? null,
-          proof: null,
-          publicSignals: null,
-        });
-        setIdentity((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            credentials: [...prev.credentials, result.credential],
-          };
-        });
-        return result;
-      } catch (err) {
-        console.error("Proof verification failed:", err);
-        throw err;
+    async ({ type, threshold = null, proof, publicSignals }) => {
+      if (!proof || !publicSignals) {
+        throw new Error("completeProof requires a real proof and publicSignals.");
       }
+      const result = await client.verifyProof({ type, threshold, proof, publicSignals });
+      setIdentity((prev) => {
+        if (!prev) return prev;
+        return { ...prev, credentials: [...prev.credentials, result.credential] };
+      });
+      return result;
     },
     [client],
   );

@@ -1,57 +1,102 @@
 import { Router } from "express";
+import { z } from "zod";
 import { authenticate } from "../middleware/authenticate.js";
-import crypto from "crypto";
-import db from "../db/database.js";
+import {
+  validate,
+  proofTypeSchema,
+  groth16ProofSchema,
+  publicSignalsSchema,
+  walletSchema,
+} from "../middleware/validate.js";
+import { verifyProof, submitCredential } from "../services/zk.service.js";
+import prisma from "../db/prisma.js";
+import logger from "../config/logger.js";
 
 const router = Router();
 
-router.post("/verify", authenticate, async (req, res) => {
-  try {
-    const { type, threshold } = req.body;
-    const wallet = req.user.wallet;
-
-    if (!type) return res.status(400).json({ error: "proof type required" });
-
-    await new Promise((r) => setTimeout(r, 500));
-
-    const txSig = `${crypto.randomBytes(32).toString("base64url").slice(0, 44)}`;
-
-    const id = crypto.randomUUID();
-    const verifiedAt = new Date().toISOString();
-    db.prepare(
-      "INSERT INTO verified_credentials (id, wallet, type, threshold, tx_sig, verified_at) VALUES (?, ?, ?, ?, ?, ?)",
-    ).run(id, wallet, type, threshold || null, txSig, verifiedAt);
-
-    const credential = {
-      type,
-      threshold: threshold || null,
-      verifiedAt: Math.floor(Date.now() / 1000),
-      txSignature: txSig,
-      expiresAt: null,
-    };
-
-    res.json({ verified: true, txSignature: txSig, credential });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+const verifyBody = z.object({
+  type: proofTypeSchema,
+  proof: groth16ProofSchema,
+  publicSignals: publicSignalsSchema,
+  threshold: z.number().int().nonnegative().optional().nullable(),
 });
 
-router.get("/:wallet/credentials", async (req, res) => {
-  try {
-    const rows = db
-      .prepare("SELECT * FROM verified_credentials WHERE wallet = ?")
-      .all(req.params.wallet);
-    const credentials = rows.map((c) => ({
-      type: c.type,
-      threshold: c.threshold,
-      verifiedAt: new Date(c.verified_at).getTime() / 1000,
-      txSignature: c.tx_sig,
-      expiresAt: c.expires_at ? new Date(c.expires_at).getTime() / 1000 : null,
-    }));
-    res.json({ credentials });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post(
+  "/verify",
+  authenticate,
+  validate({ body: verifyBody }),
+  async (req, res, next) => {
+    try {
+      const { type, proof, publicSignals, threshold } = req.body;
+      const wallet = req.user.wallet;
+
+      const verified = await verifyProof({ type, proof, publicSignals });
+      if (!verified) {
+        return res
+          .status(400)
+          .json({ error: "Proof failed verification", code: "INVALID_PROOF" });
+      }
+
+      const { txSignature, credentialPda, reused } = await submitCredential({
+        wallet,
+        type,
+        proof,
+        publicSignals,
+      });
+
+      const credential = await prisma.verifiedCredential.create({
+        data: {
+          wallet,
+          type,
+          threshold: threshold ?? null,
+          txSig: txSignature ?? credentialPda,
+          publicSignals,
+        },
+      });
+
+      logger.info({ wallet, type, txSignature, reused }, "credential issued");
+
+      res.json({
+        verified: true,
+        txSignature,
+        credentialPda,
+        reused: !!reused,
+        credential: {
+          type: credential.type,
+          threshold: credential.threshold,
+          verifiedAt: Math.floor(credential.verifiedAt.getTime() / 1000),
+          txSignature: credential.txSig,
+          expiresAt: null,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get(
+  "/:wallet/credentials",
+  validate({ params: z.object({ wallet: walletSchema }) }),
+  async (req, res, next) => {
+    try {
+      const rows = await prisma.verifiedCredential.findMany({
+        where: { wallet: req.params.wallet },
+        orderBy: { verifiedAt: "desc" },
+      });
+      res.json({
+        credentials: rows.map((c) => ({
+          type: c.type,
+          threshold: c.threshold,
+          verifiedAt: Math.floor(c.verifiedAt.getTime() / 1000),
+          txSignature: c.txSig,
+          expiresAt: c.expiresAt ? Math.floor(c.expiresAt.getTime() / 1000) : null,
+        })),
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export default router;

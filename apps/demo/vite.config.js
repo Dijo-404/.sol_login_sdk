@@ -11,17 +11,31 @@ export default defineConfig({
     },
   },
   define: {
-    // Polyfill for wallet-adapter and @solana/web3.js in browser
+    // Polyfill for wallet-adapter, @solana/web3.js, snarkjs, and circomlibjs in browser
     "process.env": {},
     global: "globalThis",
   },
   optimizeDeps: {
-    // Pre-bundle these to avoid CJS interop issues
     include: [
       "@solana/wallet-adapter-react",
       "@solana/wallet-adapter-react-ui",
       "@solana/wallet-adapter-base",
       "@solana/web3.js",
+      "snarkjs",
+      "circomlibjs",
     ],
+    esbuildOptions: {
+      define: { global: "globalThis" },
+    },
+  },
+  build: {
+    target: "esnext",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          zk: ["snarkjs", "circomlibjs"],
+        },
+      },
+    },
   },
 });

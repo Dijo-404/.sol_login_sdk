@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  wallet    String
+  token     String   @unique
+  domain    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+
+  @@index([wallet])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model ReputationCache {
+  wallet    String   @id
+  score     Int
+  breakdown Json
+  indexedAt DateTime @default(now()) @map("indexed_at")
+
+  @@map("reputation_cache")
+}
+
+model VerifiedCredential {
+  id           String    @id @default(uuid())
+  wallet       String
+  type         String
+  threshold    Int?
+  txSig        String    @map("tx_sig")
+  publicSignals Json?    @map("public_signals")
+  verifiedAt   DateTime  @default(now()) @map("verified_at")
+  expiresAt    DateTime? @map("expires_at")
+
+  @@index([wallet])
+  @@map("verified_credentials")
+}

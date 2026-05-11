@@ -29,7 +29,7 @@ graph TB
     end
 
     subgraph DataLayer["Data & State Layer"]
-        SQLite["SQLite Database (State Cache)"]
+        Postgres["PostgreSQL (Prisma)"]
         SolanaRPC["Solana RPC Node"]
         AnchorProgram["Anchor ZK Verifier Program"]
     end
@@ -46,8 +46,8 @@ graph TB
     ReputationRouter --> ReputationEngine
 
     %% Backend to Data Layer
-    SessionManager --> SQLite
-    ReputationEngine --> SQLite
+    SessionManager --> Postgres
+    ReputationEngine --> Postgres
     SNSResolver --> SolanaRPC
     ReputationEngine --> SolanaRPC
     ProofRouter --> AnchorProgram
@@ -61,12 +61,13 @@ graph TB
 - **ZK Proof Generator**: Uses compiled WASM circuits to generate Zero-Knowledge proofs directly in the user's browser, ensuring private data never leaves the client.
 
 ### 2. Backend Environment
-- **Auth Service**: Manages the Ed25519 challenge-response cycle and issues JWTs for authenticated sessions.
+- **Auth Service**: Manages the Ed25519 challenge-response cycle and issues JWTs for authenticated sessions. Sessions are persisted in Postgres via Prisma.
 - **SNS Resolver Service**: Interfaces with the Solana Name Service (Bonfida) to resolve `.sol` domains to wallet addresses and vice-versa, fetching associated records (avatars, social links).
-- **Reputation Engine**: Analyzes on-chain activity (DeFi usage, governance participation, NFT trades, wallet age) to compute a normalized reputation score.
-- **Proof Service**: Receives client-generated ZK proofs and validates them either locally or via the Anchor smart contract.
+- **Reputation Engine**: Calls the Helius enhanced transactions API and matches transactions against known program IDs (Jupiter, Marinade, Drift, Tensor, Magic Eden, Realms, SNS) to compute a per-protocol reputation score. Falls back to `getSignaturesForAddress` for wallet-age data.
+- **Proof Service**: Receives client-generated ZK proofs, verifies them with `snarkjs.groth16.verify` against the matching `.vkey.json`, then submits an Anchor transaction that records a `Credential` PDA seeded by the user's wallet. The backend signer pays rent; the user wallet owns the PDA.
 
 ### 3. Data & State Layer
-- **SQLite Database**: Used for caching reputation scores, managing active sessions, and storing verified credential records.
-- **Solana RPC**: Provides the on-chain data necessary for SNS resolution and reputation computation.
-- **Anchor Program**: A Solana smart contract designed to natively verify Groth16 zk-SNARK proofs on-chain.
+- **PostgreSQL (Prisma)**: Stores `sessions`, `reputation_cache` (6h TTL), and `verified_credentials`. Schema lives in [apps/backend/prisma/schema.prisma](../apps/backend/prisma/schema.prisma).
+- **Helius**: Enhanced transactions API used to parse program-level activity for reputation scoring.
+- **Solana RPC**: Direct RPC connection for SNS resolution, signature history, and submitting credential transactions via Anchor.
+- **Anchor Program**: A deployed Solana program (`sol-login`) that records `Credential` PDAs as the on-chain anchor of trust. Proof bytes are stored in the instruction payload and emitted via the `ProofVerified` event for future on-chain alt_bn128 verifier upgrades.

@@ -6,6 +6,9 @@ pub mod errors;
 
 use instructions::*;
 
+// REPLACE before deploy: run `anchor build && solana-keygen new -o target/deploy/sol_login-keypair.json`,
+// then `solana address -k target/deploy/sol_login-keypair.json` and paste the resulting pubkey here.
+// See docs/anchor-deploy.md for the full deployment workflow.
 declare_id!("So1LoG1nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
 
 #[program]

@@ -20,10 +20,19 @@ import Docs from "@/pages/Docs";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
-const SOLANA_NETWORK = import.meta.env.VITE_SOLANA_NETWORK || "devnet";
-const RPC_ENDPOINT =
-  import.meta.env.VITE_SOLANA_RPC || "https://api.devnet.solana.com";
+function requireEnv(key) {
+  const v = import.meta.env[key];
+  if (!v) {
+    throw new Error(
+      `Missing required env var ${key}. Copy apps/demo/.env.example to apps/demo/.env and set it.`,
+    );
+  }
+  return v;
+}
+
+const API_URL = requireEnv("VITE_API_URL");
+const SOLANA_NETWORK = requireEnv("VITE_SOLANA_NETWORK");
+const RPC_ENDPOINT = requireEnv("VITE_SOLANA_RPC");
 
 function App() {
   useEffect(() => {

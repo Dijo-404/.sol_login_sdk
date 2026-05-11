@@ -2,24 +2,16 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { useSolLogin } from "@sol-login/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Loader2, ShieldCheck, Cpu, Zap, Lock } from "lucide-react";
+import { Check, Loader2, ShieldCheck, Cpu, Zap, Lock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { generateProof } from "@/lib/zkProver";
+import { buildInputs } from "@/lib/proofInputs";
 
 const STEPS = [
-  { id: 1, label: "Loading Groth16 circuit (WASM)", icon: Cpu, duration: 900 },
-  {
-    id: 2,
-    label: "Generating witness from private inputs",
-    icon: Lock,
-    duration: 1100,
-  },
-  { id: 3, label: "Computing zk-SNARK proof", icon: Zap, duration: 1500 },
-  {
-    id: 4,
-    label: "Verifying onchain via Anchor program",
-    icon: ShieldCheck,
-    duration: 1100,
-  },
+  { id: "inputs", label: "Building private inputs", icon: Lock },
+  { id: "load", label: "Loading Groth16 circuit (WASM)", icon: Cpu },
+  { id: "witness", label: "Computing zk-SNARK proof", icon: Zap },
+  { id: "submit", label: "Verifying onchain via Anchor program", icon: ShieldCheck },
 ];
 
 const PROOF_TITLES = {
@@ -30,50 +22,79 @@ const PROOF_TITLES = {
 };
 
 const ZkProofModal = () => {
-  const { zkProofRequest, closeProof, completeProof } = useSolLogin();
+  const { zkProofRequest, closeProof, completeProof, client, identity } = useSolLogin();
   const open = !!zkProofRequest;
   const [step, setStep] = useState(0);
-  const [done, setDone] = useState(false);
+  const [status, setStatus] = useState("running");
   const [logs, setLogs] = useState([]);
   const [txSig, setTxSig] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!open) {
       setStep(0);
-      setDone(false);
+      setStatus("running");
       setLogs([]);
       setTxSig(null);
+      setError(null);
       return;
     }
-    let cancelled = false;
-    const run = async () => {
-      for (let i = 0; i < STEPS.length; i++) {
-        if (cancelled) return;
-        setStep(i);
-        setLogs((prev) => [...prev, `> ${STEPS[i].label}…`]);
-        await new Promise((r) => setTimeout(r, STEPS[i].duration));
-        if (cancelled) return;
-        setLogs((prev) => [...prev, `  ✓ ${STEPS[i].label} — ok`]);
-      }
 
+    let cancelled = false;
+    const log = (line) => !cancelled && setLogs((prev) => [...prev, line]);
+
+    const run = async () => {
       try {
+        setStep(0);
+        log(`> ${STEPS[0].label}…`);
+        const t0 = performance.now();
+        const { inputs } = await buildInputs({
+          type: zkProofRequest.type,
+          request: zkProofRequest,
+          client,
+          identity,
+        });
+        if (cancelled) return;
+        log(`  ✓ inputs ready (${Math.round(performance.now() - t0)}ms)`);
+
+        setStep(1);
+        log(`> ${STEPS[1].label}…`);
+
+        setStep(2);
+        log(`> ${STEPS[2].label}…`);
+        const t1 = performance.now();
+        const { proof, publicSignals } = await generateProof({
+          type: zkProofRequest.type,
+          inputs,
+          onPhase: (phase) => {
+            if (phase === "load") log(`  ✓ artifacts fetched`);
+          },
+        });
+        if (cancelled) return;
+        log(`  ✓ proof computed (${Math.round(performance.now() - t1)}ms)`);
+
+        setStep(3);
+        log(`> ${STEPS[3].label}…`);
         const result = await completeProof({
           type: zkProofRequest.type,
           threshold: zkProofRequest.threshold,
+          proof,
+          publicSignals,
         });
-        const sig =
-          result?.txSignature ||
-          `${Math.random().toString(36).slice(2, 6).toUpperCase()}…${Math.random().toString(36).slice(2, 5)}`;
+        if (cancelled) return;
+        const sig = result?.txSignature || result?.credentialPda;
+        if (!sig) throw new Error("Backend returned no transaction signature");
         setTxSig(sig);
-        setLogs((prev) => [...prev, `> tx_signature = ${sig}`]);
-        setDone(true);
+        log(`  ✓ tx_signature = ${sig}`);
+        setStatus("done");
         toast.success("ZK proof verified", {
-          description: `${PROOF_TITLES[zkProofRequest.type]} issued onchain.`,
+          description: `${PROOF_TITLES[zkProofRequest.type]} anchored onchain.`,
         });
       } catch (err) {
-        setLogs((prev) => [...prev, `  ✗ Verification failed: ${err.message}`]);
-        setDone(true);
-        setTxSig(null);
+        if (cancelled) return;
+        log(`  ✗ ${err.message}`);
+        setError(err.message);
+        setStatus("failed");
         toast.error("Proof verification failed", { description: err.message });
       }
     };
@@ -81,9 +102,12 @@ const ZkProofModal = () => {
     return () => {
       cancelled = true;
     };
-  }, [open, zkProofRequest, completeProof]);
+  }, [open, zkProofRequest, completeProof, client, identity]);
 
   if (!zkProofRequest) return null;
+
+  const done = status === "done";
+  const failed = status === "failed";
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && closeProof()}>
@@ -128,8 +152,7 @@ const ZkProofModal = () => {
             )}
             {zkProofRequest.type === "social_ownership" && (
               <>
-                ownership of a linked social account without revealing the
-                handle.
+                ownership of a linked social account without revealing the handle.
               </>
             )}
           </p>
@@ -143,10 +166,7 @@ const ZkProofModal = () => {
                 groth16 — proving
               </span>
             </div>
-            <div
-              className="p-4 max-h-44 overflow-y-auto terminal-text"
-              data-testid="zk-proof-terminal"
-            >
+            <div className="p-4 max-h-44 overflow-y-auto terminal-text" data-testid="zk-proof-terminal">
               <AnimatePresence>
                 {logs.map((line, i) => (
                   <motion.div
@@ -158,14 +178,16 @@ const ZkProofModal = () => {
                         ? "text-sol-purple"
                         : line.startsWith("  ✓")
                           ? "text-sol-teal"
-                          : "text-slate-400"
+                          : line.startsWith("  ✗")
+                            ? "text-red-400"
+                            : "text-slate-400"
                     }
                   >
                     {line}
                   </motion.div>
                 ))}
               </AnimatePresence>
-              {!done && (
+              {status === "running" && (
                 <motion.div
                   animate={{ opacity: [0.3, 1, 0.3] }}
                   transition={{ repeat: Infinity, duration: 1.2 }}
@@ -180,7 +202,7 @@ const ZkProofModal = () => {
           <div className="mt-5 grid grid-cols-4 gap-2">
             {STEPS.map((s, i) => {
               const Icon = s.icon;
-              const active = i === step && !done;
+              const active = i === step && status === "running";
               const completed = i < step || done;
               return (
                 <div
@@ -212,15 +234,33 @@ const ZkProofModal = () => {
               <div className="flex items-center gap-2 text-sol-teal text-sm font-medium">
                 <ShieldCheck size={16} /> Verified onchain
               </div>
-              <div className="mt-2 font-mono text-[11px] text-slate-400 break-all">
-                tx: {txSig}
-              </div>
+              <div className="mt-2 font-mono text-[11px] text-slate-400 break-all">tx: {txSig}</div>
               <button
                 onClick={closeProof}
                 className="mt-4 w-full btn-primary-solid"
                 data-testid="zk-proof-done-button"
               >
                 Continue
+              </button>
+            </motion.div>
+          )}
+
+          {failed && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-5 p-4 rounded-xl bg-red-500/[0.06] border border-red-500/20"
+            >
+              <div className="flex items-center gap-2 text-red-400 text-sm font-medium">
+                <AlertTriangle size={16} /> Verification failed
+              </div>
+              <div className="mt-2 font-mono text-[11px] text-slate-400 break-words">{error}</div>
+              <button
+                onClick={closeProof}
+                className="mt-4 w-full btn-primary-solid"
+                data-testid="zk-proof-done-button"
+              >
+                Close
               </button>
             </motion.div>
           )}

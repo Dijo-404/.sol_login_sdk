@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import {
   createChallenge,
   verifySignature,
@@ -7,98 +8,101 @@ import {
 import { resolveIdentity } from "../services/sns.service.js";
 import { computeReputation } from "../services/reputation.service.js";
 import { authenticate } from "../middleware/authenticate.js";
+import {
+  validate,
+  walletSchema,
+  solDomainSchema,
+} from "../middleware/validate.js";
+import logger from "../config/logger.js";
 
 const router = Router();
 
-router.post("/challenge", (req, res) => {
+const challengeBody = z.object({ walletAddress: walletSchema });
+const verifyBody = z.object({
+  walletAddress: walletSchema,
+  signature: z.string().min(64).max(128),
+  solDomain: solDomainSchema.optional().nullable(),
+});
+
+function emptyIdentity(wallet, domain) {
+  return {
+    wallet,
+    domain: domain || null,
+    avatar: null,
+    displayName: null,
+    bio: null,
+    socials: {},
+    reputation: null,
+    credentials: [],
+    resolvedAt: Math.floor(Date.now() / 1000),
+  };
+}
+
+router.post("/challenge", validate({ body: challengeBody }), (req, res, next) => {
   try {
-    const { walletAddress } = req.body;
-    if (!walletAddress)
-      return res.status(400).json({ error: "walletAddress required" });
-    const challenge = createChallenge(walletAddress);
-    res.json(challenge);
+    res.json(createChallenge(req.body.walletAddress));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
-router.post("/verify", async (req, res) => {
+router.post("/verify", validate({ body: verifyBody }), async (req, res, next) => {
   try {
     const { walletAddress, signature, solDomain } = req.body;
-    if (!walletAddress || !signature) {
-      return res
-        .status(400)
-        .json({ error: "walletAddress and signature required" });
-    }
-
-    const session = verifySignature(walletAddress, signature, solDomain);
+    const session = await verifySignature(walletAddress, signature, solDomain);
 
     let identity = null;
     if (solDomain) {
-      identity = await resolveIdentity(solDomain);
+      try {
+        identity = await resolveIdentity(solDomain);
+      } catch (err) {
+        logger.warn({ err: err.message, domain: solDomain }, "sns resolve failed");
+      }
     }
-
-    if (!identity) {
-      identity = {
-        wallet: walletAddress,
-        domain: solDomain || null,
-        avatar: null,
-        displayName: null,
-        bio: null,
-        socials: {},
-        reputation: null,
-        credentials: [],
-        resolvedAt: Math.floor(Date.now() / 1000),
-      };
-    }
+    if (!identity) identity = emptyIdentity(walletAddress, solDomain);
 
     try {
       identity.reputation = await computeReputation(walletAddress);
-    } catch {
-      // Ignore
+    } catch (err) {
+      logger.warn({ err: err.message, wallet: walletAddress }, "reputation failed");
     }
 
     res.json({ token: session.token, identity });
   } catch (err) {
-    res.status(401).json({ error: err.message });
+    next(err);
   }
 });
 
-router.get("/me", authenticate, async (req, res) => {
+router.get("/me", authenticate, async (req, res, next) => {
   try {
     const { wallet, domain } = req.user;
     let identity = null;
     if (domain) {
-      identity = await resolveIdentity(domain);
+      try {
+        identity = await resolveIdentity(domain);
+      } catch (err) {
+        logger.warn({ err: err.message, domain }, "sns resolve failed");
+      }
     }
-    if (!identity) {
-      identity = {
-        wallet,
-        domain,
-        avatar: null,
-        displayName: null,
-        bio: null,
-        socials: {},
-        reputation: null,
-        credentials: [],
-        resolvedAt: Math.floor(Date.now() / 1000),
-      };
-    }
+    if (!identity) identity = emptyIdentity(wallet, domain);
     try {
       identity.reputation = await computeReputation(wallet);
-    } catch {
-      // Ignore
+    } catch (err) {
+      logger.warn({ err: err.message, wallet }, "reputation failed");
     }
     res.json(identity);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
-router.post("/logout", authenticate, (req, res) => {
-  const token = req.headers.authorization?.slice(7);
-  if (token) invalidateSession(token);
-  res.json({ success: true });
+router.post("/logout", authenticate, async (req, res, next) => {
+  try {
+    if (req.token) await invalidateSession(req.token);
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;

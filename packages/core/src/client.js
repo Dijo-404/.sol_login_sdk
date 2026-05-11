@@ -64,6 +64,10 @@ export class SolLoginClient {
     return this._fetch(`/identity/reverse/${wallet}`);
   }
 
+  async getWalletAge(wallet) {
+    return this._fetch(`/identity/age/${wallet}`);
+  }
+
   async getReputation(wallet) {
     return this._fetch(`/reputation/${wallet}`);
   }

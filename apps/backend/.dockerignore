@@ -1,0 +1,15 @@
+**/node_modules
+**/.git
+**/.env
+**/.env.local
+**/dist
+**/build
+**/.next
+**/.turbo
+**/.vite
+**/target
+**/.DS_Store
+data.db
+data.db-journal
+data.db-shm
+data.db-wal

@@ -1,29 +1,35 @@
 import { Router } from "express";
-import { computeReputation } from "../services/reputation.service.js";
+import { z } from "zod";
+import { computeReputation, invalidateReputation } from "../services/reputation.service.js";
 import { authenticate } from "../middleware/authenticate.js";
+import { validate, walletSchema } from "../middleware/validate.js";
 
 const router = Router();
 
-router.get("/:wallet", async (req, res) => {
-  try {
-    const score = await computeReputation(req.params.wallet);
-    res.json(score);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get(
+  "/:wallet",
+  validate({ params: z.object({ wallet: walletSchema }) }),
+  async (req, res, next) => {
+    try {
+      res.json(await computeReputation(req.params.wallet));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
-router.post("/:wallet/refresh", authenticate, async (req, res) => {
-  try {
-    const db = (await import("../db/database.js")).default;
-    db.prepare("DELETE FROM reputation_cache WHERE wallet = ?").run(
-      req.params.wallet,
-    );
-    const score = await computeReputation(req.params.wallet);
-    res.json(score);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post(
+  "/:wallet/refresh",
+  authenticate,
+  validate({ params: z.object({ wallet: walletSchema }) }),
+  async (req, res, next) => {
+    try {
+      await invalidateReputation(req.params.wallet);
+      res.json(await computeReputation(req.params.wallet));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export default router;
