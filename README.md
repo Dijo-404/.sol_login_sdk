@@ -25,13 +25,133 @@ An open-source identity primitive that replaces raw wallet connection with a hum
 
 ## Architecture
 
-See [Architecture Documentation](./docs/architecture.md) for detailed diagrams and component breakdowns.
+```mermaid
+graph TB
+    subgraph Client["Client Environment (Browser)"]
+        DApp["dApp Frontend"]
+        ReactSDK["@sol-login/react"]
+        CoreSDK["@sol-login/core"]
+        ZKGen["ZK Proof Generator (WASM)"]
+        
+        DApp --> ReactSDK
+        ReactSDK --> CoreSDK
+        ReactSDK --> ZKGen
+    end
+
+    subgraph Backend["Backend Environment (Node.js / Express)"]
+        AuthRouter["Auth Router (/auth)"]
+        IdentityRouter["Identity Router (/identity)"]
+        ReputationRouter["Reputation Router (/reputation)"]
+        ProofRouter["Proof Router (/proof)"]
+        
+        SessionManager["Session Manager"]
+        SNSResolver["SNS Resolver Service"]
+        ReputationEngine["Reputation Engine"]
+    end
+
+    subgraph DataLayer["Data & State Layer"]
+        Postgres["PostgreSQL (Prisma)"]
+        SolanaRPC["Solana RPC Node"]
+        AnchorProgram["Anchor ZK Verifier Program"]
+    end
+
+    %% Client to Backend
+    CoreSDK -- "REST API (HTTP)" --> AuthRouter
+    CoreSDK -- "REST API (HTTP)" --> IdentityRouter
+    CoreSDK -- "REST API (HTTP)" --> ReputationRouter
+    ZKGen -- "Submit Proof" --> ProofRouter
+
+    %% Backend Internals
+    AuthRouter --> SessionManager
+    IdentityRouter --> SNSResolver
+    ReputationRouter --> ReputationEngine
+
+    %% Backend to Data Layer
+    SessionManager --> Postgres
+    ReputationEngine --> Postgres
+    SNSResolver --> SolanaRPC
+    ReputationEngine --> SolanaRPC
+    ProofRouter --> AnchorProgram
+```
+
+See [Architecture Documentation](./docs/architecture.md) for detailed component breakdowns.
 
 ---
 
 ## Authentication and Workflows
 
-See [Workflows Documentation](./docs/workflows.md) for detailed sequence diagrams of the authentication flow and ZK proof pipeline.
+### Authentication Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant App as dApp Frontend
+    participant Core as @sol-login/core
+    participant API as Backend API
+    participant RPC as Solana RPC
+
+    User->>App: Clicks "Sign in with .sol"
+    App->>Core: Request authentication
+    Core->>API: POST /auth/challenge (walletAddress)
+    API-->>Core: Return nonce & challenge message
+    Core->>User: Request wallet signature (Ed25519)
+    User-->>Core: Approves & signs message
+    Core->>API: POST /auth/verify (signature, walletAddress)
+    
+    rect rgb(20, 24, 30)
+        Note over API,RPC: Identity Resolution Phase
+        API->>API: Verify Ed25519 signature
+        API->>RPC: Fetch SNS records for wallet
+        RPC-->>API: Domain name, Avatar, Socials
+        API->>RPC: Fetch on-chain history for Reputation
+        RPC-->>API: Tx count, balance, tokens
+    end
+
+    API->>API: Compute Reputation Score
+    API->>API: Issue JWT Session
+    API-->>Core: Session Token & Identity Object
+    Core-->>App: Update state & render profile
+    App-->>User: Display authenticated state
+```
+
+### Zero-Knowledge Credential Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant App as dApp Frontend
+    participant WASM as ZK Prover (Local)
+    participant API as Backend API
+    participant Anchor as Solana Program (Verifier)
+
+    User->>App: Request Credential (e.g., Reputation > 500)
+    App->>WASM: Initialize Groth16 circuit
+    
+    rect rgb(20, 24, 30)
+        Note over App,WASM: Private Execution
+        App->>WASM: Supply private inputs (exact score, salt)
+        WASM->>WASM: Compute witness
+        WASM->>WASM: Generate zk-SNARK proof
+    end
+    
+    WASM-->>App: Proof Bytes & Public Signals
+    App->>API: POST /proof/verify (proof, signals)
+    API->>Anchor: Submit proof for on-chain verification
+    Anchor-->>API: Verification Result
+    
+    alt is valid
+        API->>API: Store verified credential
+        API-->>App: Success & txSignature
+        App-->>User: Display new credential badge
+    else is invalid
+        API-->>App: Rejection error
+        App-->>User: Display verification failure
+    end
+```
+
+See [Workflows Documentation](./docs/workflows.md) for more details.
 
 ---
 
