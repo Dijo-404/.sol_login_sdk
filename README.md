@@ -159,21 +159,21 @@ See [Workflows Documentation](./docs/workflows.md) for more details.
 
 ```
 sol-login/
-  apps/
-    demo/                   Vite + React demo app (real snarkjs proof generation)
-    backend/                Express API — Postgres/Prisma, Helius, real Anchor submit
-  packages/
-    core/                   @sol-login/core (framework-agnostic)
-    react/                  @sol-login/react (hooks + provider)
-    express/                @sol-login/express (session middleware)
-    circuits/               Circom ZK circuits + trusted-setup scripts
-  programs/
-    sol-login/              Anchor program (credential PDA store; off-chain verifier today)
-  docs/
-    architecture.md         Component diagram + responsibilities
-    workflows.md            Auth + proof sequence diagrams
-    deployment.md           End-to-end deploy (Postgres, Vercel, Railway, Helius)
-    anchor-deploy.md        Program keypair, build, deploy, issuer wallet
+├── apps/
+│   ├── demo/                   # Vite + React demo app (real snarkjs proof generation)
+│   └── backend/                # Express API — Postgres/Prisma, Helius, real Anchor submit
+├── packages/
+│   ├── core/                   # @sol-login/core (framework-agnostic)
+│   ├── react/                  # @sol-login/react (hooks + provider)
+│   ├── express/                # @sol-login/express (session middleware)
+│   └── circuits/               # Circom ZK circuits + trusted-setup scripts
+├── programs/
+│   └── sol-login/              # Anchor program (credential PDA store; off-chain verifier today)
+└── docs/
+    ├── architecture.md         # Component diagram + responsibilities
+    ├── workflows.md            # Auth + proof sequence diagrams
+    ├── deployment.md           # End-to-end deploy (Postgres, Vercel, Railway, Helius)
+    └── anchor-deploy.md        # Program keypair, build, deploy, issuer wallet
 ```
 
 ---
