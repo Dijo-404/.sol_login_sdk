@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: sol-login-api
+    runtime: docker
+    repo: https://github.com/Dijo-404/.sol_login_sdk.git
+    branch: main
+    dockerfilePath: ./apps/backend/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: SOLANA_NETWORK
+        value: mainnet-beta
+      - key: SOLANA_RPC_URL
+        sync: false
+      - key: HELIUS_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY
+        value: "24h"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sol-login-db
+          property: connectionURI
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: SOL_LOGIN_PROGRAM_ID
+        sync: false
+      - key: SOL_LOGIN_SIGNER_KEY
+        sync: false
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: RATE_LIMIT_MAX
+        value: "20"
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+    autoDeploy: true
+
+databases:
+  - name: sol-login-db
+    plan: starter
+    databaseName: sol_login
+    postgresMajorVersion: "16"

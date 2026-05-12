@@ -425,12 +425,13 @@ Wallets are auto-detected at runtime. No legacy adapters are required.
 
 ## Deployment
 
-See [docs/deployment.md](./docs/deployment.md) for the full step-by-step (Postgres provisioning, Anchor program deploy, ZK trusted setup, Vercel + Railway). The short version:
+See [docs/deployment.md](./docs/deployment.md) for the full step-by-step (Postgres provisioning, Anchor program deploy, ZK trusted setup, Vercel + Render). The short version:
 
 - **Frontend** — Vercel, configured by [apps/demo/vercel.json](./apps/demo/vercel.json). Set `VITE_API_URL`, `VITE_SOLANA_NETWORK`, `VITE_SOLANA_RPC` in the project env.
-- **Backend** — Containerized via [apps/backend/Dockerfile](./apps/backend/Dockerfile); deploy to Railway, Render, Fly, or any Docker host. Requires a managed Postgres (`DATABASE_URL`) and all variables from `.env.example`.
-- **Anchor program** — Deploy once before the backend can issue real credentials. See [docs/anchor-deploy.md](./docs/anchor-deploy.md).
-- **CI/CD** — [.github/workflows/ci.yml](./.github/workflows/ci.yml) lints, builds, and runs a Postgres-backed health check. [.github/workflows/deploy.yml](./.github/workflows/deploy.yml) is a manual-dispatch deploy for Vercel + Railway.
+- **Backend** — Containerized via [apps/backend/Dockerfile](./apps/backend/Dockerfile); deploy to Render using the [render.yaml](./render.yaml) Blueprint (auto-creates the web service + managed Postgres). Requires all variables from `.env.example`.
+- **Database** — Supabase (recommended) or Railway Postgres. Connection string goes into `DATABASE_URL`.
+- **Anchor program** — Deploy to **mainnet-beta** before the backend can issue real credentials. See [docs/anchor-deploy.md](./docs/anchor-deploy.md).
+- **CI/CD** — [.github/workflows/ci.yml](./.github/workflows/ci.yml) lints, builds, and runs a Postgres-backed health check. [.github/workflows/deploy.yml](./.github/workflows/deploy.yml) is a manual-dispatch deploy for Vercel + Render.
 
 ---
 

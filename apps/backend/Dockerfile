@@ -3,8 +3,9 @@ ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH NODE_ENV=production
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
+# Copy workspace config + lockfile first for layer caching
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
+COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 COPY apps/backend/package.json apps/backend/
 COPY packages/core/package.json packages/core/
 COPY packages/circuits/package.json packages/circuits/

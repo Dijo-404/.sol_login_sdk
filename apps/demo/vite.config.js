@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ["snarkjs", "circomlibjs", "@solana/web3.js"],
   },
   define: {
     // Polyfill for wallet-adapter, @solana/web3.js, snarkjs, and circomlibjs in browser
@@ -30,6 +31,10 @@ export default defineConfig({
   },
   build: {
     target: "esnext",
+    commonjsOptions: {
+      include: [/snarkjs/, /circomlibjs/, /node_modules/],
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       output: {
         manualChunks: {

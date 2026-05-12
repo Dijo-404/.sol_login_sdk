@@ -53,17 +53,14 @@ jobs:
         run: vercel deploy --prebuilt ${{ inputs.environment == 'production' && '--prod' || '' }} --token $VERCEL_TOKEN
 
   deploy-backend:
-    name: Deploy backend (Railway)
+    name: Deploy backend (Render)
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: npm i -g @railway/cli
-
-      - name: Deploy
+      - name: Trigger Render deploy
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_SERVICE: ${{ secrets.RAILWAY_SERVICE_ID }}
-        run: railway up --service "$RAILWAY_SERVICE" --detach
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          curl -sf "$RENDER_DEPLOY_HOOK" \
+            || (echo "Render deploy hook failed — check RENDER_DEPLOY_HOOK secret" && exit 1)
+          echo "Render deploy triggered successfully"
